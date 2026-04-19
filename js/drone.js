@@ -4,8 +4,8 @@ const DroneModule = (() => {
   const NOTE_OFFSETS = { C: -9, 'C#': -8, D: -7, 'D#': -6, E: -5, F: -4, 'F#': -3, G: -2, 'G#': -1, A: 0, 'A#': 1, B: 2 };
 
   let audioCtx = null;
-  let oscillator = null;
-  let gainNode = null;
+  let droneNodes = [];  // all active oscillators/nodes for cleanup
+  let masterGain = null;
   let isPlaying = false;
   let currentNote = 'A';
   let currentAStandard = CONFIG.defaultAStandard;
@@ -14,42 +14,89 @@ const DroneModule = (() => {
     return aStandard * Math.pow(2, NOTE_OFFSETS[note] / 12);
   }
 
+  // Build a rich drone: fundamental + 4 harmonics + slight stereo detune
+  function buildDrone(freq) {
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+
+    // Each harmonic: [multiplier, relative gain, detune cents]
+    const harmonics = [
+      [1,    0.50,  0],     // fundamental
+      [2,    0.20,  1.5],   // octave
+      [3,    0.12,  0],     // fifth above octave
+      [4,    0.08, -1.5],   // two octaves
+      [5,    0.05,  0],     // major third above that
+      [0.5,  0.06,  0],     // sub-octave for warmth
+    ];
+
+    harmonics.forEach(([mult, gain, detuneCents]) => {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq * mult;
+      osc.detune.value = detuneCents;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start();
+      droneNodes.push(osc, g);
+    });
+
+    // Gentle low-pass filter to remove harshness
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = freq * 6;
+    filter.Q.value = 0.7;
+    masterGain.disconnect();
+    masterGain.connect(filter);
+    filter.connect(audioCtx.destination);
+    droneNodes.push(filter);
+
+    // Fade in over 80ms to avoid click
+    masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.08);
+  }
+
   function start() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    if (oscillator) { oscillator.stop(); oscillator = null; }
+    stopNodes();
 
-    oscillator = audioCtx.createOscillator();
-    gainNode   = audioCtx.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.value = getFrequency(currentNote, currentAStandard);
-    gainNode.gain.value = 0.45;
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start();
+    buildDrone(getFrequency(currentNote, currentAStandard));
     isPlaying = true;
     refreshPlayButtons();
   }
 
-  function stop() {
-    if (oscillator) {
-      try { oscillator.stop(); } catch (e) {}
-      oscillator = null;
+  function stopNodes() {
+    if (masterGain) {
+      // Fade out over 80ms to avoid click
+      masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
     }
+    setTimeout(() => {
+      droneNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
+      droneNodes = [];
+      masterGain = null;
+    }, 100);
+  }
+
+  function stop() {
+    stopNodes();
     isPlaying = false;
     refreshPlayButtons();
   }
 
   function setNote(note) {
     currentNote = note;
-    if (oscillator) oscillator.frequency.value = getFrequency(note, currentAStandard);
+    if (isPlaying) { stop(); setTimeout(start, 120); }  // restart with new freq
     refreshNoteSelectors();
     refreshYouTubeEmbed();
   }
 
   function setAStandard(hz) {
     currentAStandard = hz;
-    if (oscillator) oscillator.frequency.value = getFrequency(currentNote, currentAStandard);
+    if (isPlaying) { stop(); setTimeout(start, 120); }  // restart with new tuning
     refreshAStandardLabels();
   }
 

@@ -122,8 +122,20 @@ function toggleRecording() {
 
 async function startRecording() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    state.mediaRecorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 48000,
+      }
+    });
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : '';
+    const options = { audioBitsPerSecond: 128000, ...(mimeType && { mimeType }) };
+    state.mediaRecorder = new MediaRecorder(stream, options);
     state.audioChunks   = [];
     state.recordingTime = 0;
 
