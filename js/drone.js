@@ -69,16 +69,21 @@ const DroneModule = (() => {
   }
 
   function stopNodes() {
-    if (masterGain) {
-      // Fade out over 80ms to avoid click
-      masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+    // Capture and clear module refs immediately so buildDrone() can run right after
+    const oldNodes = droneNodes;
+    const oldGain  = masterGain;
+    droneNodes  = [];
+    masterGain  = null;
+
+    if (oldGain) {
+      oldGain.gain.setValueAtTime(oldGain.gain.value, audioCtx.currentTime);
+      oldGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
     }
+    // Dispose old nodes after fade-out completes
     setTimeout(() => {
-      droneNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
-      droneNodes = [];
-      masterGain = null;
-    }, 100);
+      oldNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
+      try { oldGain && oldGain.disconnect(); } catch(e){}
+    }, 120);
   }
 
   function stop() {
@@ -89,14 +94,14 @@ const DroneModule = (() => {
 
   function setNote(note) {
     currentNote = note;
-    if (isPlaying) { stop(); setTimeout(start, 120); }  // restart with new freq
     refreshNoteSelectors();
     refreshYouTubeEmbed();
+    if (isPlaying) { stop(); start(); }
   }
 
   function setAStandard(hz) {
     currentAStandard = hz;
-    if (isPlaying) { stop(); setTimeout(start, 120); }  // restart with new tuning
+    if (isPlaying) { stop(); start(); }
     refreshAStandardLabels();
   }
 
