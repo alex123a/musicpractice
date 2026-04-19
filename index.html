@@ -251,6 +251,7 @@
 
   <!-- ── Screen 7: Success ──────────────────────────────────────────────── -->
   <div id="screen7" class="screen">
+    <button class="back-btn" onclick="goTo('screen5')">← Back</button>
     <div class="header">
       <h1>Great work!</h1>
       <p>Session summary</p>
@@ -265,8 +266,8 @@
     </div>
     <div class="question" style="margin-top:1.5rem;">What would you like to do next?</div>
     <div class="btn-group">
-      <button class="btn-secondary" onclick="goTo('screen2')">Practice another excerpt</button>
-      <button class="btn-secondary" onclick="goTo('screen2')">Play through with different focus</button>
+      <button class="btn-secondary" onclick="practiceTaggedExcerpts()">Practice tagged excerpts →</button>
+      <button class="btn-secondary" onclick="playThroughDifferentFocus()">Play through with different focus</button>
       <button class="btn-secondary" onclick="endSession()">End practice session</button>
     </div>
   </div>

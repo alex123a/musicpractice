@@ -1336,3 +1336,75 @@ button {
 
 .tagger-actions .btn-primary { flex: 1; }
 .tagger-actions .btn-secondary { flex-shrink: 0; }
+
+/* ── Session groups (tags screen) ──────────────────────────────────────── */
+.session-group {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.session-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  background: var(--color-background-tertiary);
+  border-bottom: 1px solid var(--color-border-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.session-group-dur {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mini player inside each session group */
+.session-mini-player {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--color-border-tertiary);
+}
+
+.session-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  min-width: 28px;
+  text-align: right;
+}
+
+.session-progress-wrap {
+  flex: 1;
+  cursor: pointer;
+}
+
+/* Tags inside a session group */
+.session-tags {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-tags .tag-row {
+  border: none;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.65rem 0.9rem;
+}
+
+.session-tags .tag-row:last-child {
+  border-bottom: none;
+}
+
+.session-tags .tag-row-info {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

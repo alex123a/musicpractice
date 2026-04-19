@@ -1,23 +1,136 @@
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
   pieceName       : '',
-  mode            : '',          // 'playthrough' | 'excerpt'
-  selectedFocus   : '',          // 'pitch' | 'rhythm'
+  mode            : '',
+  selectedFocus   : '',
   recordingTime   : 0,
   recordedAudioURL: null,
-  audioBlob       : null,        // raw Blob for tagger / IndexedDB
+  audioBlob       : null,
   isRecording     : false,
   mediaRecorder   : null,
   audioChunks     : [],
   timerInterval   : null,
   playbackAudio   : null,
   playbackRAF     : null,
-  // Tagging (playthrough mode)
   tags            : [],
   savedSessionId  : null,
-  // Excerpt mode — selected tag to work on
   selectedTag     : null,
 };
+
+// ── Session audio players (tags screen) ────────────────────────────────────
+const _sessionPlayers = {};
+let _sessionPlayerRAF  = null;
+
+function stopAllSessionPlayers() {
+  Object.entries(_sessionPlayers).forEach(([, audio]) => {
+    try { audio.pause(); } catch(e){}
+  });
+  cancelAnimationFrame(_sessionPlayerRAF);
+  document.querySelectorAll('.session-play-btn').forEach(btn => btn.textContent = '▶');
+}
+
+async function toggleSessionPlayer(sessionId) {
+  if (!_sessionPlayers[sessionId]) {
+    const blob = await DB.getAudio(sessionId);
+    if (!blob) return;
+    const url   = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => {
+      cancelAnimationFrame(_sessionPlayerRAF);
+      const btn = document.getElementById(`sp-btn-${sessionId}`);
+      if (btn) btn.textContent = '▶';
+    };
+    _sessionPlayers[sessionId] = audio;
+  }
+  const audio = _sessionPlayers[sessionId];
+  if (audio.paused) {
+    stopAllSessionPlayers();
+    audio.play();
+    const btn = document.getElementById(`sp-btn-${sessionId}`);
+    if (btn) btn.textContent = '⏸';
+    _tickSessionPlayer(sessionId);
+  } else {
+    audio.pause();
+    const btn = document.getElementById(`sp-btn-${sessionId}`);
+    if (btn) btn.textContent = '▶';
+    cancelAnimationFrame(_sessionPlayerRAF);
+  }
+}
+
+function _tickSessionPlayer(sessionId) {
+  const audio = _sessionPlayers[sessionId];
+  if (!audio || audio.paused) return;
+  const elapsed  = audio.currentTime;
+  const duration = audio.duration || 1;
+  const pct      = Math.min((elapsed / duration) * 100, 100);
+  const fill = document.getElementById(`sp-fill-${sessionId}`);
+  if (fill) fill.style.width = pct + '%';
+  const timeEl = document.getElementById(`sp-time-${sessionId}`);
+  if (timeEl) {
+    const m = Math.floor(elapsed / 60);
+    const s = Math.floor(elapsed % 60).toString().padStart(2, '0');
+    timeEl.textContent = `${m}:${s}`;
+  }
+  _sessionPlayerRAF = requestAnimationFrame(() => _tickSessionPlayer(sessionId));
+}
+
+function seekSessionPlayer(sessionId, e) {
+  const bar  = document.getElementById(`sp-bar-${sessionId}`);
+  if (!bar) return;
+  const rect = bar.getBoundingClientRect();
+  const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+  const doSeek = (audio) => {
+    audio.currentTime = pct * audio.duration;
+    const fill = document.getElementById(`sp-fill-${sessionId}`);
+    if (fill) fill.style.width = pct * 100 + '%';
+  };
+
+  if (_sessionPlayers[sessionId]) {
+    const audio = _sessionPlayers[sessionId];
+    if (audio.readyState >= 1) doSeek(audio);
+    else audio.addEventListener('loadedmetadata', () => doSeek(audio), { once: true });
+  } else {
+    // Load on first seek
+    toggleSessionPlayer(sessionId).then(() => {
+      const audio = _sessionPlayers[sessionId];
+      if (audio) {
+        audio.pause();
+        const btn = document.getElementById(`sp-btn-${sessionId}`);
+        if (btn) btn.textContent = '▶';
+        if (audio.readyState >= 1) doSeek(audio);
+        else audio.addEventListener('loadedmetadata', () => doSeek(audio), { once: true });
+      }
+    });
+  }
+}
+
+// Seek a session player to a specific tag timestamp, then play from there
+async function sessionTagSeek(sessionId, timestamp) {
+  if (!_sessionPlayers[sessionId]) {
+    const blob = await DB.getAudio(sessionId);
+    if (!blob) return;
+    const url   = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => {
+      cancelAnimationFrame(_sessionPlayerRAF);
+      const btn = document.getElementById(`sp-btn-${sessionId}`);
+      if (btn) btn.textContent = '▶';
+    };
+    _sessionPlayers[sessionId] = audio;
+  }
+  stopAllSessionPlayers();
+  const audio  = _sessionPlayers[sessionId];
+  const doPlay = () => {
+    audio.currentTime = timestamp;
+    audio.play();
+    const btn = document.getElementById(`sp-btn-${sessionId}`);
+    if (btn) btn.textContent = '⏸';
+    _tickSessionPlayer(sessionId);
+  };
+  if (audio.readyState >= 1) doPlay();
+  else audio.addEventListener('loadedmetadata', doPlay, { once: true });
+}
 
 // ── Navigation ─────────────────────────────────────────────────────────────
 function goTo(screenId) {
@@ -30,8 +143,12 @@ function goTo(screenId) {
 function onScreenEnter(screenId) {
   const name = state.pieceName || 'Your piece';
 
+  // Stop session audio players when leaving the tags screen
+  if (screenId !== 'screen-tags') stopAllSessionPlayers();
+
   if (screenId === 'screen1') {
     setText('s1-piece', name);
+    refreshExcerptBadge();
   }
 
   if (screenId === 'screen2') {
@@ -66,7 +183,6 @@ function onScreenEnter(screenId) {
     const focusLabel = state.selectedFocus === 'pitch' ? 'Focus: Pitch / Intonation' : 'Focus: Pulse / Rhythm';
     setText('s4-focus-label', focusLabel);
     setText('s4-piece', name);
-    // Show selected tag context if in excerpt mode
     const tagCtx = document.getElementById('s4-tag-context');
     if (tagCtx) {
       if (state.mode === 'excerpt' && state.selectedTag) {
@@ -82,25 +198,22 @@ function onScreenEnter(screenId) {
   if (screenId === 'screen5') {
     DroneModule.stop();
     MetronomeModule.stop();
-
-    state.tags           = [];
-    state.savedSessionId = null;
+    // Note: state.tags is NOT reset here — preserved so back-nav from screen7 restores tagger state.
+    // Tags are reset in startRecording() / resetRecording() when a fresh take begins.
 
     const s5body = document.getElementById('s5-body');
     if (!s5body) return;
 
     if (state.mode === 'playthrough' && state.audioBlob) {
-      // Tagger mode
       TaggerModule.init(state);
       TaggerModule.render(s5body, state.audioBlob);
       document.getElementById('s5-eval-section').style.display = 'none';
+      setText('s5-title', 'Tag problem sections');
     } else {
-      // Evaluation mode (excerpt / no audio blob)
       TaggerModule.stop();
       s5body.innerHTML = buildS5PlayerHTML();
-      attachS5PlayerEvents();
       document.getElementById('s5-eval-section').style.display = 'block';
-      // Populate duration label
+      setText('s5-title', 'Evaluation');
       const mins = Math.floor(state.recordingTime / 60).toString().padStart(2, '0');
       const secs = (state.recordingTime % 60).toString().padStart(2, '0');
       setText('s5-recording-duration', `Your recording · ${mins}:${secs}`);
@@ -118,10 +231,9 @@ function onScreenEnter(screenId) {
   }
 
   if (screenId === 'screen7') {
-    // Mark selected tag as practiced if coming from excerpt mode
+    // Mark selected tag as practiced when coming from excerpt mode
     if (state.mode === 'excerpt' && state.selectedTag && state.savedSessionId) {
       DB.markTagPracticed(state.savedSessionId, state.selectedTag.id)
-        .then(() => renderTagsScreen())  // refresh if visible
         .catch(console.error);
     }
     refreshExcerptBadge();
@@ -147,8 +259,6 @@ function buildS5PlayerHTML() {
     </div>`;
 }
 
-function attachS5PlayerEvents() { /* click handlers are inline */ }
-
 function renderMiniPanel() {
   const bodyEl = document.getElementById('mini-ref-body');
   if (!bodyEl) return;
@@ -170,6 +280,10 @@ function _fmtTime(s) {
   return `${m}:${sec}`;
 }
 
+function _esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ── Landing page ───────────────────────────────────────────────────────────
 function startSession() {
   const input = document.getElementById('piece-name-input');
@@ -186,11 +300,10 @@ function handleLandingKey(e) {
 function setMode(mode) {
   state.mode = mode;
   if (mode === 'excerpt') {
-    // Check if there are saved tags for this piece
     const normalized = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
     DB.getSessionsForPiece(normalized).then(sessions => {
-      const allTags = sessions.flatMap(s => s.tags.map(t => ({ ...t, sessionId: s.id, sessionDate: s.date })));
-      if (allTags.length > 0) {
+      const hasTags = sessions.some(s => s.tags && s.tags.length > 0);
+      if (hasTags) {
         goTo('screen-tags');
       } else {
         goTo('screen2');
@@ -199,6 +312,32 @@ function setMode(mode) {
   } else {
     goTo('screen2');
   }
+}
+
+// Called from screen7 "Practice tagged excerpts" button
+function practiceTaggedExcerpts() {
+  state.mode        = 'excerpt';
+  state.selectedTag = null;
+  const normalized  = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+  DB.getSessionsForPiece(normalized).then(sessions => {
+    const hasTags = sessions.some(s => s.tags && s.tags.length > 0);
+    if (hasTags) {
+      goTo('screen-tags');
+    } else {
+      goTo('screen2');
+    }
+  }).catch(() => goTo('screen2'));
+}
+
+// Called from screen7 "Play through with different focus"
+function playThroughDifferentFocus() {
+  state.mode           = 'playthrough';
+  state.selectedFocus  = '';
+  state.selectedTag    = null;
+  // Clear recording state so a fresh recording can begin
+  resetRecording();
+  document.querySelectorAll('.focus-item').forEach(f => f.classList.remove('selected'));
+  goTo('screen2');
 }
 
 function selectFocus(focus, el) {
@@ -215,10 +354,12 @@ function goToReference() {
   goTo('screen3');
 }
 
-// ── Tags screen (excerpt mode) ─────────────────────────────────────────────
+// ── Tags screen ────────────────────────────────────────────────────────────
 async function renderTagsScreen() {
   const container = document.getElementById('tags-screen-body');
   if (!container) return;
+
+  container.innerHTML = '<p style="color:var(--color-text-secondary);padding:1rem 0;">Loading…</p>';
 
   const normalized = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
   let sessions;
@@ -229,53 +370,80 @@ async function renderTagsScreen() {
     return;
   }
 
-  const allTags = sessions.flatMap(s =>
-    s.tags.map(t => ({ ...t, sessionId: s.id, sessionDate: s.date }))
-  ).sort((a, b) => a.timestamp - b.timestamp);
+  sessions = sessions.filter(s => s.tags && s.tags.length > 0)
+                     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  if (allTags.length === 0) {
+  if (sessions.length === 0) {
     container.innerHTML = '<p style="color:var(--color-text-secondary)">No saved problem sections yet.</p>';
     return;
   }
 
-  const rows = allTags.map(t => `
-    <div class="tag-row${t.practiced ? ' practiced' : ''}" data-session="${t.sessionId}" data-tag="${t.id}">
-      <div class="tag-row-info">
-        <span class="tag-row-time">${_fmtTime(t.timestamp)}</span>
-        <span class="tag-row-label">${_esc(t.label)}</span>
-        ${t.practiced ? '<span class="tag-practiced-badge">✓ Practiced</span>' : ''}
-      </div>
-      <div class="tag-row-date">${new Date(t.sessionDate).toLocaleDateString()}</div>
-      <button class="btn-secondary btn-sm tag-work-btn"
-              onclick="selectTagAndContinue(${t.sessionId}, ${t.id})">
-        Work on this →
-      </button>
-    </div>`).join('');
+  const html = sessions.map(session => {
+    const dateStr = new Date(session.date).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+    const dur     = _fmtTime(session.duration || 0);
 
-  container.innerHTML = rows;
+    const tagRows = session.tags
+      .slice()
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(tag => `
+        <div class="tag-row${tag.practiced ? ' practiced' : ''}">
+          <div class="tag-row-info">
+            <button class="tg-tag-seek" onclick="sessionTagSeek(${session.id}, ${tag.timestamp})">
+              ${_fmtTime(tag.timestamp)}
+            </button>
+            <span class="tag-row-label">${_esc(tag.label)}</span>
+            ${tag.practiced ? '<span class="tag-practiced-badge">✓ Practiced</span>' : ''}
+          </div>
+          <button class="btn-secondary btn-sm tag-work-btn"
+                  onclick="selectTagAndContinue(${session.id}, ${tag.id})">
+            Work on this →
+          </button>
+        </div>`).join('');
+
+    return `
+      <div class="session-group">
+        <div class="session-group-header">
+          <span>${dateStr}</span>
+          <span class="session-group-dur">${dur}</span>
+        </div>
+        <div class="session-mini-player">
+          <button class="s5-play-btn session-play-btn" id="sp-btn-${session.id}"
+                  onclick="toggleSessionPlayer(${session.id})">▶</button>
+          <div class="s5-progress-wrap session-progress-wrap"
+               onclick="seekSessionPlayer(${session.id}, event)">
+            <div class="s5-progress-bar" id="sp-bar-${session.id}">
+              <div class="s5-progress-fill" id="sp-fill-${session.id}"></div>
+            </div>
+          </div>
+          <span class="session-time" id="sp-time-${session.id}">0:00</span>
+        </div>
+        <div class="session-tags">${tagRows}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = html;
 }
 
 function selectTagAndContinue(sessionId, tagId) {
-  DB.getSessionsForPiece((state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_'))
-    .then(sessions => {
-      const session = sessions.find(s => s.id === sessionId);
-      if (!session) return;
-      const tag = session.tags.find(t => t.id === tagId);
-      if (!tag) return;
-      state.selectedTag     = { ...tag, sessionId };
-      state.savedSessionId  = sessionId;
-      goTo('screen2');
-    }).catch(console.error);
+  const normalized = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+  DB.getSessionsForPiece(normalized).then(sessions => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+    const tag = session.tags.find(t => t.id === tagId);
+    if (!tag) return;
+    state.selectedTag    = { ...tag, sessionId };
+    state.savedSessionId = sessionId;
+    state.mode           = 'excerpt';
+    stopAllSessionPlayers();
+    goTo('screen2');
+  }).catch(console.error);
 }
 
 function skipTagsScreen() {
   state.selectedTag    = null;
   state.savedSessionId = null;
+  stopAllSessionPlayers();
   goTo('screen2');
-}
-
-function _esc(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Excerpt badge ──────────────────────────────────────────────────────────
@@ -283,7 +451,7 @@ function refreshExcerptBadge() {
   const normalized = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
   if (!normalized) return;
   DB.getSessionsForPiece(normalized).then(sessions => {
-    const unpracticed = sessions.flatMap(s => s.tags).filter(t => !t.practiced).length;
+    const unpracticed = sessions.flatMap(s => s.tags || []).filter(t => !t.practiced).length;
     const btn = document.getElementById('excerpt-btn');
     if (!btn) return;
     if (unpracticed > 0) {
@@ -300,6 +468,10 @@ function toggleRecording() {
 }
 
 async function startRecording() {
+  // Fresh take: clear any previous tags and saved session reference
+  state.tags           = [];
+  state.savedSessionId = null;
+
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -321,7 +493,7 @@ async function startRecording() {
     state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
     state.mediaRecorder.onstop = () => {
       const blob = new Blob(state.audioChunks, { type: mimeType || 'audio/webm' });
-      state.audioBlob       = blob;
+      state.audioBlob        = blob;
       state.recordedAudioURL = URL.createObjectURL(blob);
       stream.getTracks().forEach(t => t.stop());
     };
@@ -441,11 +613,13 @@ function downloadRecording() {
 }
 
 function resetRecording() {
-  state.isRecording     = false;
-  state.recordingTime   = 0;
+  state.isRecording      = false;
+  state.recordingTime    = 0;
   state.recordedAudioURL = null;
-  state.audioBlob       = null;
-  state.audioChunks     = [];
+  state.audioBlob        = null;
+  state.audioChunks      = [];
+  state.tags             = [];
+  state.savedSessionId   = null;
   clearInterval(state.timerInterval);
 
   const timer = document.getElementById('timer');
@@ -481,12 +655,11 @@ function toggleStrategy(el) {
 // ── Session end ────────────────────────────────────────────────────────────
 function endSession() {
   resetRecording();
+  stopAllSessionPlayers();
   state.pieceName      = '';
   state.mode           = '';
   state.selectedFocus  = '';
-  state.tags           = [];
   state.selectedTag    = null;
-  state.savedSessionId = null;
   DroneModule.stop();
   MetronomeModule.stop();
   document.querySelectorAll('.focus-item').forEach(f => f.classList.remove('selected'));
