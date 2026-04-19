@@ -45,7 +45,7 @@
     </div>
     <div class="question">Do you want to play through or work on a short excerpt?</div>
     <div class="btn-group">
-      <button class="btn-secondary" onclick="setMode('playthrough')">Play through entire piece</button>
+      <button class="btn-secondary" onclick="setMode('playthrough')">Play through entire piece or section</button>
       <button class="btn-secondary" id="excerpt-btn" onclick="setMode('excerpt')">Work on short excerpt</button>
     </div>
   </div>
@@ -73,19 +73,11 @@
       <p id="s2-mode-text"></p>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
-    <div class="question">What exactly do you want to focus on?</div>
-    <div class="focus-list">
-      <div class="focus-item" onclick="selectFocus('pitch', this)">
-        <strong>Pitch / Intonation</strong>
-        <span>Use a drone tone to tune your notes accurately</span>
-      </div>
-      <div class="focus-item" onclick="selectFocus('rhythm', this)">
-        <strong>Pulse / Rhythm</strong>
-        <span>Work with a metronome to build steady pulse</span>
-      </div>
-    </div>
-    <button class="btn-primary" style="width:100%;" onclick="goToReference()">
-      Continue to reference →
+    <div id="s2-tag-context" class="tag-context-banner" style="display:none;"></div>
+    <div class="question" id="s2-question"></div>
+    <div class="focus-list" id="s2-focus-list"></div>
+    <button class="btn-primary" id="s2-continue-btn" style="width:100%;" onclick="goToReference()">
+      Continue →
     </button>
   </div>
 
@@ -97,32 +89,7 @@
       <p id="s3-piece"></p>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
-
-    <div class="screen-scroll">
-      <!-- Audio references: YouTube search -->
-      <div class="section-card">
-        <h3>Audio references</h3>
-        <div id="yt-search-container"></div>
-      </div>
-
-      <!-- Technical reference: drone (pitch) or metronome (rhythm) -->
-      <div class="section-card">
-        <h3>Technical reference</h3>
-        <div id="drone-tool-container"></div>
-        <div id="metronome-tool-container"></div>
-      </div>
-
-      <div class="question" style="margin-top:0.5rem;">
-        Do you have a clear idea of how it should sound?
-      </div>
-      <div class="btn-group">
-        <button class="btn-secondary" onclick="goTo('screen4')">Yes, ready to record</button>
-        <button class="btn-secondary"
-                onclick="alert('TODO: AI integration — help clarify your inner representation')">
-          Help me clarify my inner representation
-        </button>
-      </div>
-    </div>
+    <div id="screen3-body" class="screen-scroll"></div>
   </div>
 
   <!-- ── Screen 4: Recording ────────────────────────────────────────────── -->
@@ -142,6 +109,20 @@
       <summary id="s4-focus-label">Reference</summary>
       <div class="mini-ref-body" id="mini-ref-body"></div>
     </details>
+
+    <!-- Note picker — pitch focus only -->
+    <details class="note-picker-panel" id="note-picker-panel"
+             ontoggle="onNotePickerToggle(this)" style="display:none;">
+      <summary>Change drone note</summary>
+      <div id="note-picker-container"></div>
+    </details>
+
+    <!-- Skip recording — excerpt mode only -->
+    <button class="btn-secondary" id="skip-to-eval-btn"
+            style="width:100%; display:none; margin-bottom:0.5rem;"
+            onclick="skipToEvaluation()">
+      Skip recording — just evaluate
+    </button>
 
     <div class="recording-zone">
       <div class="rec-icon" id="recIcon" onclick="toggleRecording()">

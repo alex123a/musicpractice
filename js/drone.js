@@ -259,6 +259,21 @@ const DroneModule = (() => {
     document.querySelectorAll('.note-pill').forEach(pill => {
       pill.classList.toggle('active', pill.dataset.note === currentNote);
     });
+    // Keep any rendered mini displays in sync
+    const freq = getFrequency(currentNote, currentAStandard).toFixed(1);
+    document.querySelectorAll('.mini-note-display').forEach(el => el.textContent = currentNote);
+    document.querySelectorAll('.mini-info').forEach(el => {
+      el.textContent = `${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', organ: 'Organ' }[droneMode]}`;
+    });
+  }
+
+  function renderNotePicker(container) {
+    if (!container) return;
+    const pills = NOTES.map(n =>
+      `<button class="note-pill${n === currentNote ? ' active' : ''}" data-note="${n}"
+               onclick="DroneModule.setNote('${n}')">${n}</button>`
+    ).join('');
+    container.innerHTML = `<div class="note-pills">${pills}</div>`;
   }
 
   function refreshAStandardLabels() {
@@ -353,5 +368,5 @@ const DroneModule = (() => {
     }
   }
 
-  return { render, renderMini, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
+  return { render, renderMini, renderNotePicker, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
 })();

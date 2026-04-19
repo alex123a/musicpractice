@@ -1422,3 +1422,116 @@ button {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
+
+/* ── Screen 3 clarify section ──────────────────────────────────────────── */
+.clarify-main-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.clarify-tools {
+  display: none;
+  margin-top: 0.25rem;
+}
+
+.clarify-step {
+  margin-bottom: 0.75rem;
+}
+
+.clarify-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+/* Expandable tool sections */
+.tool-details {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.tool-details > summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.tool-details > summary::-webkit-details-marker { display: none; }
+
+.tool-details > summary::after {
+  content: '›';
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.tool-details[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.tool-details > div {
+  padding: 0 1rem 1rem;
+}
+
+/* Drone tip card */
+.drone-tip {
+  background: var(--color-background-info);
+  border: 1px solid var(--color-border-info);
+  color: var(--color-text-info);
+  border-radius: var(--border-radius-md);
+  padding: 0.6rem 0.85rem;
+  font-size: 13px;
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Note picker panel (screen 4) ──────────────────────────────────────── */
+.note-picker-panel {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.note-picker-panel > summary {
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.note-picker-panel > summary::-webkit-details-marker { display: none; }
+
+.note-picker-panel > summary::after {
+  content: '›';
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.note-picker-panel[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.note-picker-panel > div {
+  padding: 0 1rem 0.75rem;
+}

@@ -22,9 +22,7 @@ const _sessionPlayers = {};
 let _sessionPlayerRAF  = null;
 
 function stopAllSessionPlayers() {
-  Object.entries(_sessionPlayers).forEach(([, audio]) => {
-    try { audio.pause(); } catch(e){}
-  });
+  Object.values(_sessionPlayers).forEach(audio => { try { audio.pause(); } catch(e){} });
   cancelAnimationFrame(_sessionPlayerRAF);
   document.querySelectorAll('.session-play-btn').forEach(btn => btn.textContent = '▶');
 }
@@ -33,8 +31,7 @@ async function toggleSessionPlayer(sessionId) {
   if (!_sessionPlayers[sessionId]) {
     const blob = await DB.getAudio(sessionId);
     if (!blob) return;
-    const url   = URL.createObjectURL(blob);
-    const audio = new Audio(url);
+    const audio = new Audio(URL.createObjectURL(blob));
     audio.onended = () => {
       cancelAnimationFrame(_sessionPlayerRAF);
       const btn = document.getElementById(`sp-btn-${sessionId}`);
@@ -62,9 +59,8 @@ function _tickSessionPlayer(sessionId) {
   if (!audio || audio.paused) return;
   const elapsed  = audio.currentTime;
   const duration = audio.duration || 1;
-  const pct      = Math.min((elapsed / duration) * 100, 100);
   const fill = document.getElementById(`sp-fill-${sessionId}`);
-  if (fill) fill.style.width = pct + '%';
+  if (fill) fill.style.width = Math.min((elapsed / duration) * 100, 100) + '%';
   const timeEl = document.getElementById(`sp-time-${sessionId}`);
   if (timeEl) {
     const m = Math.floor(elapsed / 60);
@@ -75,43 +71,37 @@ function _tickSessionPlayer(sessionId) {
 }
 
 function seekSessionPlayer(sessionId, e) {
-  const bar  = document.getElementById(`sp-bar-${sessionId}`);
+  const bar = document.getElementById(`sp-bar-${sessionId}`);
   if (!bar) return;
   const rect = bar.getBoundingClientRect();
   const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-
-  const doSeek = (audio) => {
+  const doSeek = audio => {
     audio.currentTime = pct * audio.duration;
     const fill = document.getElementById(`sp-fill-${sessionId}`);
     if (fill) fill.style.width = pct * 100 + '%';
   };
-
   if (_sessionPlayers[sessionId]) {
     const audio = _sessionPlayers[sessionId];
     if (audio.readyState >= 1) doSeek(audio);
     else audio.addEventListener('loadedmetadata', () => doSeek(audio), { once: true });
   } else {
-    // Load on first seek
     toggleSessionPlayer(sessionId).then(() => {
       const audio = _sessionPlayers[sessionId];
-      if (audio) {
-        audio.pause();
-        const btn = document.getElementById(`sp-btn-${sessionId}`);
-        if (btn) btn.textContent = '▶';
-        if (audio.readyState >= 1) doSeek(audio);
-        else audio.addEventListener('loadedmetadata', () => doSeek(audio), { once: true });
-      }
+      if (!audio) return;
+      audio.pause();
+      const btn = document.getElementById(`sp-btn-${sessionId}`);
+      if (btn) btn.textContent = '▶';
+      if (audio.readyState >= 1) doSeek(audio);
+      else audio.addEventListener('loadedmetadata', () => doSeek(audio), { once: true });
     });
   }
 }
 
-// Seek a session player to a specific tag timestamp, then play from there
 async function sessionTagSeek(sessionId, timestamp) {
   if (!_sessionPlayers[sessionId]) {
     const blob = await DB.getAudio(sessionId);
     if (!blob) return;
-    const url   = URL.createObjectURL(blob);
-    const audio = new Audio(url);
+    const audio = new Audio(URL.createObjectURL(blob));
     audio.onended = () => {
       cancelAnimationFrame(_sessionPlayerRAF);
       const btn = document.getElementById(`sp-btn-${sessionId}`);
@@ -120,7 +110,7 @@ async function sessionTagSeek(sessionId, timestamp) {
     _sessionPlayers[sessionId] = audio;
   }
   stopAllSessionPlayers();
-  const audio  = _sessionPlayers[sessionId];
+  const audio = _sessionPlayers[sessionId];
   const doPlay = () => {
     audio.currentTime = timestamp;
     audio.play();
@@ -143,7 +133,6 @@ function goTo(screenId) {
 function onScreenEnter(screenId) {
   const name = state.pieceName || 'Your piece';
 
-  // Stop session audio players when leaving the tags screen
   if (screenId !== 'screen-tags') stopAllSessionPlayers();
 
   if (screenId === 'screen1') {
@@ -152,54 +141,54 @@ function onScreenEnter(screenId) {
   }
 
   if (screenId === 'screen2') {
-    const modeLabel = state.mode === 'excerpt' ? 'Working on excerpt' : 'Playing through entire piece';
+    const modeLabel = state.mode === 'excerpt'
+      ? 'Working on excerpt'
+      : 'Playing through entire piece or section';
     setText('s2-mode-text', modeLabel);
-    setText('s2-piece', name);
+    renderScreen2();
   }
 
   if (screenId === 'screen3') {
     setText('s3-piece', name);
-
-    const droneWrap = document.getElementById('drone-tool-container');
-    const metroWrap = document.getElementById('metronome-tool-container');
-
-    if (state.selectedFocus === 'pitch') {
-      droneWrap.style.display = 'block';
-      metroWrap.style.display = 'none';
-      DroneModule.render(droneWrap);
-    } else {
-      droneWrap.style.display = 'none';
-      metroWrap.style.display = 'block';
-      MetronomeModule.render(metroWrap);
-    }
-
-    YouTubeModule.render(
-      document.getElementById('yt-search-container'),
-      state.pieceName
-    );
+    renderScreen3();
   }
 
   if (screenId === 'screen4') {
-    const focusLabel = state.selectedFocus === 'pitch' ? 'Focus: Pitch / Intonation' : 'Focus: Pulse / Rhythm';
-    setText('s4-focus-label', focusLabel);
+    const labels = { pitch: 'Focus: Pitch / Intonation', rhythm: 'Focus: Pulse / Rhythm', none: 'Free play' };
+    setText('s4-focus-label', labels[state.selectedFocus] || 'Reference');
     setText('s4-piece', name);
+
     const tagCtx = document.getElementById('s4-tag-context');
     if (tagCtx) {
       if (state.mode === 'excerpt' && state.selectedTag) {
         tagCtx.style.display = 'block';
-        tagCtx.textContent   = `Working on: ${state.selectedTag.label} (${_fmtTime(state.selectedTag.timestamp)})`;
+        tagCtx.textContent   = `Working on: "${state.selectedTag.label}" (${_fmtTime(state.selectedTag.timestamp)})`;
       } else {
         tagCtx.style.display = 'none';
       }
     }
-    renderMiniPanel();
+
+    // Hide mini-ref panel for free-play mode (no focus selected)
+    const miniRefPanel = document.querySelector('.mini-ref-panel');
+    if (miniRefPanel) miniRefPanel.style.display = state.selectedFocus === 'none' ? 'none' : '';
+
+    // Note picker: only for pitch focus
+    const notePickerPanel = document.getElementById('note-picker-panel');
+    if (notePickerPanel) {
+      notePickerPanel.style.display = state.selectedFocus === 'pitch' ? '' : 'none';
+      if (state.selectedFocus === 'pitch') notePickerPanel.open = false;
+    }
+
+    // Skip-to-eval button: only in excerpt mode
+    const skipBtn = document.getElementById('skip-to-eval-btn');
+    if (skipBtn) skipBtn.style.display = state.mode === 'excerpt' ? 'block' : 'none';
+
+    if (state.selectedFocus !== 'none') renderMiniPanel();
   }
 
   if (screenId === 'screen5') {
     DroneModule.stop();
     MetronomeModule.stop();
-    // Note: state.tags is NOT reset here — preserved so back-nav from screen7 restores tagger state.
-    // Tags are reset in startRecording() / resetRecording() when a fresh take begins.
 
     const s5body = document.getElementById('s5-body');
     if (!s5body) return;
@@ -216,7 +205,8 @@ function onScreenEnter(screenId) {
       setText('s5-title', 'Evaluation');
       const mins = Math.floor(state.recordingTime / 60).toString().padStart(2, '0');
       const secs = (state.recordingTime % 60).toString().padStart(2, '0');
-      setText('s5-recording-duration', `Your recording · ${mins}:${secs}`);
+      setText('s5-recording-duration',
+        state.recordedAudioURL ? `Your recording · ${mins}:${secs}` : 'No recording');
       const fill = document.getElementById('s5-progress-fill');
       if (fill) fill.style.width = '0%';
       setText('s5-playback-time', '0:00');
@@ -226,20 +216,131 @@ function onScreenEnter(screenId) {
     stopS5Playback();
   }
 
-  if (screenId === 'screen-tags') {
-    renderTagsScreen();
-  }
+  if (screenId === 'screen-tags') renderTagsScreen();
 
   if (screenId === 'screen7') {
-    // Mark selected tag as practiced when coming from excerpt mode
     if (state.mode === 'excerpt' && state.selectedTag && state.savedSessionId) {
-      DB.markTagPracticed(state.savedSessionId, state.selectedTag.id)
-        .catch(console.error);
+      DB.markTagPracticed(state.savedSessionId, state.selectedTag.id).catch(console.error);
     }
     refreshExcerptBadge();
   }
 }
 
+// ── Screen 2: dynamic focus options ────────────────────────────────────────
+function renderScreen2() {
+  const isPlaythrough = state.mode === 'playthrough';
+
+  // Tag context banner (excerpt mode + selected tag)
+  const tagCtx = document.getElementById('s2-tag-context');
+  if (tagCtx) {
+    if (state.selectedTag && state.mode === 'excerpt') {
+      tagCtx.style.display = 'block';
+      tagCtx.textContent   = `Working on: "${state.selectedTag.label}" · ${_fmtTime(state.selectedTag.timestamp)}`;
+    } else {
+      tagCtx.style.display = 'none';
+    }
+  }
+
+  setText('s2-question', isPlaythrough
+    ? 'Do you want to focus on anything specific?'
+    : 'What exactly do you want to focus on?');
+
+  const list = document.getElementById('s2-focus-list');
+  if (list) {
+    list.innerHTML = (isPlaythrough ? `
+      <div class="focus-item" onclick="selectFocus('none', this)">
+        <strong>No, just play and analyse later</strong>
+        <span>Record your performance and review it afterwards</span>
+      </div>` : '') + `
+      <div class="focus-item" onclick="selectFocus('pitch', this)">
+        <strong>Pitch / Intonation</strong>
+        <span>Use a drone tone to tune your notes accurately</span>
+      </div>
+      <div class="focus-item" onclick="selectFocus('rhythm', this)">
+        <strong>Pulse / Rhythm</strong>
+        <span>Work with a metronome to build steady pulse</span>
+      </div>`;
+  }
+
+  // Reset selection state on each entry
+  state.selectedFocus = '';
+  const btn = document.getElementById('s2-continue-btn');
+  if (btn) btn.textContent = 'Continue →';
+}
+
+// ── Screen 3: dynamic reference layout ─────────────────────────────────────
+function renderScreen3() {
+  const container = document.getElementById('screen3-body');
+  if (!container) return;
+
+  const isPitch   = state.selectedFocus === 'pitch';
+  const toolTitle = isPitch ? 'Drone note' : 'Metronome';
+  const toolStep  = isPitch ? 'Use a drone note while playing' : 'Use a metronome while playing';
+  const toolId    = isPitch ? 'drone-tool-container' : 'metronome-tool-container';
+  const tipHtml   = isPitch ? `
+    <div class="drone-tip">
+      Choose the tonic of your piece as the drone note. If your piece is in G major, choose G.
+      You can change the drone note while playing if the key changes.
+    </div>` : '';
+
+  container.innerHTML = `
+    <div class="question">Do you have a clear idea of what it should sound like?</div>
+    <div class="clarify-main-btns">
+      <button class="btn-primary" style="width:100%;" onclick="goTo('screen4')">
+        Yes, continue to recording →
+      </button>
+      <button class="btn-secondary clarify-toggle-btn" id="clarify-toggle-btn"
+              style="width:100%;" onclick="showClarifySection()">
+        No, help me clarify my inner representation
+      </button>
+    </div>
+    <div class="clarify-tools" id="clarify-tools">
+      <div class="clarify-step">
+        <div class="clarify-step-label">1. Listen to audio before playing:</div>
+        <details class="tool-details" id="yt-details">
+          <summary>Audio reference</summary>
+          <div id="yt-search-container"></div>
+        </details>
+      </div>
+      <div class="clarify-step">
+        <div class="clarify-step-label">2. ${toolStep}:</div>
+        <details class="tool-details" id="tech-tool-details">
+          <summary>${toolTitle}</summary>
+          ${tipHtml}
+          <div id="${toolId}"></div>
+        </details>
+      </div>
+    </div>`;
+
+  document.getElementById('yt-details').addEventListener('toggle', function() {
+    if (this.open) YouTubeModule.render(document.getElementById('yt-search-container'), state.pieceName);
+  });
+
+  document.getElementById('tech-tool-details').addEventListener('toggle', function() {
+    if (!this.open) return;
+    const el = document.getElementById(toolId);
+    if (isPitch) DroneModule.render(el);
+    else MetronomeModule.render(el);
+  });
+}
+
+function showClarifySection() {
+  const tools = document.getElementById('clarify-tools');
+  if (tools) tools.style.display = 'block';
+  const btn = document.getElementById('clarify-toggle-btn');
+  if (btn) btn.style.display = 'none';
+}
+
+// ── Screen 4 helpers ────────────────────────────────────────────────────────
+function onNotePickerToggle(details) {
+  if (details.open) DroneModule.renderNotePicker(document.getElementById('note-picker-container'));
+}
+
+function skipToEvaluation() {
+  goTo('screen5');
+}
+
+// ── Shared helpers ──────────────────────────────────────────────────────────
 function buildS5PlayerHTML() {
   return `
     <div class="s5-player">
@@ -262,11 +363,8 @@ function buildS5PlayerHTML() {
 function renderMiniPanel() {
   const bodyEl = document.getElementById('mini-ref-body');
   if (!bodyEl) return;
-  if (state.selectedFocus === 'pitch') {
-    DroneModule.renderMini(bodyEl);
-  } else {
-    MetronomeModule.renderMini(bodyEl);
-  }
+  if (state.selectedFocus === 'pitch') DroneModule.renderMini(bodyEl);
+  else MetronomeModule.renderMini(bodyEl);
 }
 
 function setText(id, text) {
@@ -303,38 +401,27 @@ function setMode(mode) {
     const normalized = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
     DB.getSessionsForPiece(normalized).then(sessions => {
       const hasTags = sessions.some(s => s.tags && s.tags.length > 0);
-      if (hasTags) {
-        goTo('screen-tags');
-      } else {
-        goTo('screen2');
-      }
+      goTo(hasTags ? 'screen-tags' : 'screen2');
     }).catch(() => goTo('screen2'));
   } else {
     goTo('screen2');
   }
 }
 
-// Called from screen7 "Practice tagged excerpts" button
 function practiceTaggedExcerpts() {
   state.mode        = 'excerpt';
   state.selectedTag = null;
   const normalized  = (state.pieceName || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
   DB.getSessionsForPiece(normalized).then(sessions => {
     const hasTags = sessions.some(s => s.tags && s.tags.length > 0);
-    if (hasTags) {
-      goTo('screen-tags');
-    } else {
-      goTo('screen2');
-    }
+    goTo(hasTags ? 'screen-tags' : 'screen2');
   }).catch(() => goTo('screen2'));
 }
 
-// Called from screen7 "Play through with different focus"
 function playThroughDifferentFocus() {
-  state.mode           = 'playthrough';
-  state.selectedFocus  = '';
-  state.selectedTag    = null;
-  // Clear recording state so a fresh recording can begin
+  state.mode          = 'playthrough';
+  state.selectedFocus = '';
+  state.selectedTag   = null;
   resetRecording();
   document.querySelectorAll('.focus-item').forEach(f => f.classList.remove('selected'));
   goTo('screen2');
@@ -344,6 +431,8 @@ function selectFocus(focus, el) {
   state.selectedFocus = focus;
   document.querySelectorAll('.focus-item').forEach(f => f.classList.remove('selected'));
   if (el) el.classList.add('selected');
+  const btn = document.getElementById('s2-continue-btn');
+  if (btn) btn.textContent = focus === 'none' ? 'Continue to recording →' : 'Continue to reference →';
 }
 
 function goToReference() {
@@ -351,7 +440,7 @@ function goToReference() {
     alert('Please select a focus area first.');
     return;
   }
-  goTo('screen3');
+  goTo(state.selectedFocus === 'none' ? 'screen4' : 'screen3');
 }
 
 // ── Tags screen ────────────────────────────────────────────────────────────
@@ -370,8 +459,9 @@ async function renderTagsScreen() {
     return;
   }
 
-  sessions = sessions.filter(s => s.tags && s.tags.length > 0)
-                     .sort((a, b) => new Date(b.date) - new Date(a.date));
+  sessions = sessions
+    .filter(s => s.tags && s.tags.length > 0)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (sessions.length === 0) {
     container.innerHTML = '<p style="color:var(--color-text-secondary)">No saved problem sections yet.</p>';
@@ -379,12 +469,12 @@ async function renderTagsScreen() {
   }
 
   const html = sessions.map(session => {
-    const dateStr = new Date(session.date).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
-    const dur     = _fmtTime(session.duration || 0);
+    const dateStr = new Date(session.date).toLocaleDateString(undefined,
+      { month: 'short', day: 'numeric', year: 'numeric' });
+    const dur = _fmtTime(session.duration || 0);
 
     const tagRows = session.tags
-      .slice()
-      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice().sort((a, b) => a.timestamp - b.timestamp)
       .map(tag => `
         <div class="tag-row${tag.practiced ? ' practiced' : ''}">
           <div class="tag-row-info">
@@ -405,7 +495,8 @@ async function renderTagsScreen() {
         <div class="session-group-header">
           <span>${dateStr}</span>
           <span class="session-group-dur">${dur}</span>
-          <button class="session-delete-btn" onclick="deleteSessionAndRefresh(${session.id})" title="Delete session">✕</button>
+          <button class="session-delete-btn" onclick="deleteSessionAndRefresh(${session.id})"
+                  title="Delete session">✕</button>
         </div>
         <div class="session-mini-player">
           <button class="s5-play-btn session-play-btn" id="sp-btn-${session.id}"
@@ -485,24 +576,16 @@ function toggleRecording() {
 }
 
 async function startRecording() {
-  // Fresh take: clear any previous tags and saved session reference
   state.tags           = [];
   state.savedSessionId = null;
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        sampleRate: 48000,
-      }
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 }
     });
 
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : '';
-    const options = { audioBitsPerSecond: 128000, ...(mimeType && { mimeType }) };
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+    const options  = { audioBitsPerSecond: 128000, ...(mimeType && { mimeType }) };
     state.mediaRecorder = new MediaRecorder(stream, options);
     state.audioChunks   = [];
     state.recordingTime = 0;
@@ -513,8 +596,7 @@ async function startRecording() {
       state.audioBlob        = blob;
       state.recordedAudioURL = URL.createObjectURL(blob);
       stream.getTracks().forEach(t => t.stop());
-      // Reveal controls only after blob is ready — prevents race condition
-      // where user taps Analyze before audioBlob is set
+      // Reveal controls only after blob is ready
       document.getElementById('recStatus').textContent = 'Recording complete';
       document.getElementById('playbackControls').style.display = 'flex';
       document.getElementById('analyzeBtn').style.display = 'block';
@@ -545,15 +627,12 @@ function stopRecording() {
   }
   state.isRecording = false;
   clearInterval(state.timerInterval);
-
   document.getElementById('recIcon').classList.remove('recording');
   document.getElementById('recStatus').textContent = 'Processing…';
 }
 
 function playRecording() {
-  if (state.recordedAudioURL) {
-    new Audio(state.recordedAudioURL).play();
-  }
+  if (state.recordedAudioURL) new Audio(state.recordedAudioURL).play();
 }
 
 function toggleS5Playback() {
@@ -585,18 +664,14 @@ function toggleS5Playback() {
 function tickPlayback() {
   const audio = state.playbackAudio;
   if (!audio || audio.paused) return;
-
   const elapsed  = audio.currentTime;
   const duration = audio.duration || 1;
   const pct      = Math.min((elapsed / duration) * 100, 100);
-
   const fill = document.getElementById('s5-progress-fill');
   if (fill) fill.style.width = pct + '%';
-
   const m = Math.floor(elapsed / 60);
   const s = Math.floor(elapsed % 60).toString().padStart(2, '0');
   setText('s5-playback-time', `${m}:${s}`);
-
   state.playbackRAF = requestAnimationFrame(tickPlayback);
 }
 
@@ -615,18 +690,15 @@ function updatePlayBtn(playing) {
 }
 
 function stopS5Playback() {
-  if (state.playbackAudio) {
-    state.playbackAudio.pause();
-    state.playbackAudio = null;
-  }
+  if (state.playbackAudio) { state.playbackAudio.pause(); state.playbackAudio = null; }
   cancelAnimationFrame(state.playbackRAF);
   updatePlayBtn(false);
 }
 
 function downloadRecording() {
   if (!state.recordedAudioURL) return;
-  const a = document.createElement('a');
-  a.href = state.recordedAudioURL;
+  const a    = document.createElement('a');
+  a.href     = state.recordedAudioURL;
   const name = (state.pieceName || 'recording').replace(/[^a-z0-9]/gi, '_').toLowerCase();
   a.download = `${name}_practice.webm`;
   a.click();
@@ -642,23 +714,15 @@ function resetRecording() {
   state.savedSessionId   = null;
   clearInterval(state.timerInterval);
 
-  const timer = document.getElementById('timer');
-  if (timer) timer.textContent = '00:00';
-
-  const icon = document.getElementById('recIcon');
-  if (icon) icon.classList.remove('recording');
-
-  const status = document.getElementById('recStatus');
-  if (status) status.textContent = 'Tap to start recording';
-
-  const waveform = document.getElementById('waveform');
-  if (waveform) waveform.style.display = 'none';
-
-  const controls = document.getElementById('playbackControls');
-  if (controls) controls.style.display = 'none';
-
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  if (analyzeBtn) analyzeBtn.style.display = 'none';
+  const els = {
+    timer          : el => el.textContent = '00:00',
+    recIcon        : el => el.classList.remove('recording'),
+    recStatus      : el => el.textContent = 'Tap to start recording',
+    waveform       : el => el.style.display = 'none',
+    playbackControls: el => el.style.display = 'none',
+    analyzeBtn     : el => el.style.display = 'none',
+  };
+  Object.entries(els).forEach(([id, fn]) => { const el = document.getElementById(id); if (el) fn(el); });
 }
 
 function animateWaveform() {
@@ -668,9 +732,7 @@ function animateWaveform() {
 }
 
 // ── Strategy expand ────────────────────────────────────────────────────────
-function toggleStrategy(el) {
-  el.classList.toggle('expanded');
-}
+function toggleStrategy(el) { el.classList.toggle('expanded'); }
 
 // ── Session end ────────────────────────────────────────────────────────────
 function endSession() {
@@ -691,7 +753,8 @@ function endSession() {
 document.addEventListener('DOMContentLoaded', () => {
   const waveform = document.getElementById('waveform');
   if (waveform) {
-    waveform.innerHTML = Array.from({ length: 12 }, () => '<div class="waveform-bar" style="height:20px"></div>').join('');
+    waveform.innerHTML = Array.from({ length: 12 },
+      () => '<div class="waveform-bar" style="height:20px"></div>').join('');
   }
   DB.open().catch(console.error);
 });
