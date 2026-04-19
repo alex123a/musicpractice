@@ -131,9 +131,67 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
   }
 
+  // ── Organ mode: deep meditative, clearly audible fifth ───────────────────
+  function buildOrganDrone(freq) {
+    masterGain = audioCtx.createGain();
+
+    // Mellow low-pass — organs are warm, not bright
+    const lpf = audioCtx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 2200;
+    lpf.Q.value = 0.4;
+
+    masterGain.connect(lpf);
+    lpf.connect(audioCtx.destination);
+    droneNodes.push(lpf);
+
+    // Very slow tremolo (amplitude modulation at 3 Hz) — meditative breath feel
+    const tremolo     = audioCtx.createOscillator();
+    const tremoloGain = audioCtx.createGain();
+    const tremoloDepth = audioCtx.createGain();
+    tremolo.type = 'sine';
+    tremolo.frequency.value = 3;
+    tremoloGain.gain.value = 1;         // carrier
+    tremoloDepth.gain.value = 0.04;     // ±4% amplitude swell
+    tremolo.connect(tremoloDepth);
+    tremoloDepth.connect(tremoloGain.gain);
+    tremolo.start();
+    droneNodes.push(tremolo, tremoloGain, tremoloDepth);
+
+    function addPipe(frequency, gain) {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(tremoloGain); // through tremolo
+      tremoloGain.connect(masterGain);
+      osc.start();
+      droneNodes.push(osc, g);
+    }
+
+    // Root note — drawbar-style layers (sub, fundamental, octave, 2nd octave)
+    addPipe(freq * 0.5, 0.22);  // 16' sub-octave — the "deep" quality
+    addPipe(freq * 1.0, 0.48);  // 8'  fundamental
+    addPipe(freq * 2.0, 0.16);  // 4'  octave
+    addPipe(freq * 4.0, 0.05);  // 2'  two octaves — slight air
+
+    // Perfect fifth (e.g. G above C) — clearly audible, like a 5⅓' organ stop
+    const fifth = freq * FIFTH_RATIO;
+    addPipe(fifth * 0.5, 0.10); // fifth in sub octave for depth
+    addPipe(fifth * 1.0, 0.38); // fifth at unison — clearly heard
+    addPipe(fifth * 2.0, 0.10); // fifth octave above
+
+    // Organ speaks immediately, very short 60ms attack
+    masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 0.06);
+  }
+
   // ── Core controls ─────────────────────────────────────────────────────────
   function buildDrone(freq) {
     if (droneMode === 'orchestra') buildOrchestralDrone(freq);
+    else if (droneMode === 'organ') buildOrganDrone(freq);
     else buildPureDrone(freq);
   }
 
@@ -255,6 +313,8 @@ const DroneModule = (() => {
                     data-mode="pure" onclick="DroneModule.setMode('pure')">Pure sine</button>
             <button class="pill drone-mode-pill${droneMode === 'orchestra' ? ' active' : ''}"
                     data-mode="orchestra" onclick="DroneModule.setMode('orchestra')">Orchestra ✦</button>
+            <button class="pill drone-mode-pill${droneMode === 'organ' ? ' active' : ''}"
+                    data-mode="organ" onclick="DroneModule.setMode('organ')">Organ ♜</button>
           </div>
         </div>
         <button class="drone-play-btn${isPlaying ? ' playing' : ''}" onclick="DroneModule.toggle()">
@@ -272,7 +332,7 @@ const DroneModule = (() => {
     return `
       <div class="mini-drone-row">
         <div class="mini-note-display">${currentNote}</div>
-        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${droneMode === 'orchestra' ? 'Orchestra' : 'Pure'}</div>
+        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', organ: 'Organ' }[droneMode]}</div>
         <button class="btn-secondary btn-sm mini-play-btn drone-play-btn${isPlaying ? ' playing' : ''}"
                 onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop' : '▶ Play'}
