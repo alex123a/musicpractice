@@ -64,6 +64,8 @@ function onScreenEnter(screenId) {
   }
 
   if (screenId === 'screen5') {
+    DroneModule.stop();
+    MetronomeModule.stop();
     stopS5Playback();
     const mins = Math.floor(state.recordingTime / 60).toString().padStart(2, '0');
     const secs = (state.recordingTime % 60).toString().padStart(2, '0');
