@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Practice Coach</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ── Screen 0: Landing ─────────────────────────────────────────────── -->
+  <div id="screen0" class="screen active">
+    <div class="landing-body">
+      <div class="landing-icon">🎵</div>
+      <div class="header" style="border:none; text-align:center; margin-bottom:2rem;">
+        <h1>Practice Coach</h1>
+        <p>Your personal music practice companion</p>
+      </div>
+      <div class="question">What do you want to practice today?</div>
+      <input type="text" id="piece-name-input" class="text-input"
+             placeholder="e.g. Bach Partita No. 2, Chaconne"
+             onkeydown="handleLandingKey(event)">
+      <button class="btn-primary" style="width:100%;" onclick="startSession()">
+        Start practice session →
+      </button>
+    </div>
+    <div class="app-footer">
+      <a href="#" class="admin-link" onclick="AdminModule.open(); return false;">Admin</a>
+    </div>
+  </div>
+
+  <!-- ── Screen 1: Mode choice ──────────────────────────────────────────── -->
+  <div id="screen1" class="screen">
+    <div class="header">
+      <h1>Practice session</h1>
+      <p id="s1-piece"></p>
+    </div>
+    <div class="question">Do you want to play through or work on a short excerpt?</div>
+    <div class="btn-group">
+      <button class="btn-secondary" onclick="setMode('playthrough')">Play through entire piece</button>
+      <button class="btn-secondary" onclick="setMode('excerpt')">Work on short excerpt</button>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Focus selection ─────────────────────────────────────── -->
+  <div id="screen2" class="screen">
+    <button class="back-btn" onclick="goTo('screen1')">← Back</button>
+    <div class="header">
+      <h1>Choose your focus</h1>
+      <p id="s2-mode-text"></p>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+    <div class="question">What exactly do you want to focus on?</div>
+    <div class="focus-list">
+      <div class="focus-item" onclick="selectFocus('pitch', this)">
+        <strong>Pitch / Intonation</strong>
+        <span>Use a drone tone to tune your notes accurately</span>
+      </div>
+      <div class="focus-item" onclick="selectFocus('rhythm', this)">
+        <strong>Pulse / Rhythm</strong>
+        <span>Work with a metronome to build steady pulse</span>
+      </div>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="goToReference()">
+      Continue to reference →
+    </button>
+  </div>
+
+  <!-- ── Screen 3: Reference selection ─────────────────────────────────── -->
+  <div id="screen3" class="screen">
+    <button class="back-btn" onclick="goTo('screen2')">← Back</button>
+    <div class="header">
+      <h1>Set your reference</h1>
+      <p id="s3-piece"></p>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+
+    <div class="screen-scroll">
+      <!-- Audio references: YouTube search -->
+      <div class="section-card">
+        <h3>Audio references</h3>
+        <div id="yt-search-container"></div>
+      </div>
+
+      <!-- Technical reference: drone (pitch) or metronome (rhythm) -->
+      <div class="section-card">
+        <h3>Technical reference</h3>
+        <div id="drone-tool-container"></div>
+        <div id="metronome-tool-container"></div>
+      </div>
+
+      <div class="question" style="margin-top:0.5rem;">
+        Do you have a clear idea of how it should sound?
+      </div>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="goTo('screen4')">Yes, ready to record</button>
+        <button class="btn-secondary"
+                onclick="alert('TODO: AI integration — help clarify your inner representation')">
+          Help me clarify my inner representation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 4: Recording ────────────────────────────────────────────── -->
+  <div id="screen4" class="screen">
+    <button class="back-btn" onclick="goTo('screen3')">← Back</button>
+    <div class="header">
+      <h1>Record yourself</h1>
+      <p id="s4-piece"></p>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+
+    <!-- Mini reference panel -->
+    <details class="mini-ref-panel" open>
+      <summary id="s4-focus-label">Reference</summary>
+      <div class="mini-ref-body" id="mini-ref-body"></div>
+    </details>
+
+    <div class="recording-zone">
+      <div class="rec-icon" id="recIcon" onclick="toggleRecording()">
+        <div class="rec-icon-inner"></div>
+      </div>
+      <div class="timer" id="timer">00:00</div>
+      <div class="rec-status" id="recStatus">Tap to start recording</div>
+      <div class="waveform" id="waveform" style="display:none;"></div>
+      <div class="playback-controls" id="playbackControls" style="display:none;">
+        <button class="icon-btn" onclick="playRecording()">▶</button>
+        <button class="icon-btn" onclick="resetRecording()">↻</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="analyzeBtn" style="width:100%; display:none;"
+            onclick="goTo('screen5')">
+      Analyze recording
+    </button>
+  </div>
+
+  <!-- ── Screen 5: Evaluation ───────────────────────────────────────────── -->
+  <div id="screen5" class="screen">
+    <button class="back-btn" onclick="goTo('screen4')">← Back</button>
+    <div class="header">
+      <h1>Evaluation</h1>
+      <p>Compare to your mental representation</p>
+    </div>
+
+    <div class="audio-ref" style="margin-bottom:1.25rem; cursor:pointer;" onclick="playS5Recording()">
+      <button class="play-mini">▶</button>
+      <span id="s5-recording-duration">Your recording</span>
+    </div>
+
+    <div class="feedback-section">
+      <div class="feedback-question">Did it match your represented idea?</div>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="goTo('screen7')">Yes, sounded good</button>
+        <button class="btn-secondary" onclick="goTo('screen6')">No, there were issues</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 6: Problem identification ───────────────────────────────── -->
+  <div id="screen6" class="screen">
+    <button class="back-btn" onclick="goTo('screen5')">← Back</button>
+    <div class="header">
+      <h1>Problem identified</h1>
+      <p>Isolate and solve</p>
+    </div>
+
+    <div class="problem-card">
+      <h3>Passage identified for focused work</h3>
+      <p>Record the specific passage that needs attention</p>
+    </div>
+
+    <div class="question">Let's play the problematic passage in isolation</div>
+    <button class="btn-secondary" style="width:100%; margin-bottom:1rem;"
+            onclick="resetRecording(); goTo('screen4');">
+      Record isolated passage
+    </button>
+
+    <div class="question" style="margin-top:1rem;">Choose a practice strategy:</div>
+    <ul class="strategy-list">
+      <li onclick="toggleStrategy(this)">
+        <strong>Drone practice</strong>
+        <p>Play with a drone note to anchor pitch</p>
+        <div class="strategy-detail">
+          Start with the tonic drone, then practice each problematic interval separately.
+          Stop on each note and compare to the drone before moving forward.
+        </div>
+      </li>
+      <li onclick="toggleStrategy(this)">
+        <strong>Tempo reduction</strong>
+        <p>Start at 40% speed, increase gradually</p>
+        <div class="strategy-detail">
+          Use your metronome and reduce tempo until you can play every note cleanly.
+          Increase by 5 BPM increments only when you can play three times without error.
+        </div>
+      </li>
+      <li onclick="toggleStrategy(this)">
+        <strong>Vocal modeling</strong>
+        <p>Sing the passage first to internalize pitch</p>
+        <div class="strategy-detail">
+          Sing the passage on pitch names or syllables before playing.
+          This builds your inner aural image and makes physical execution easier.
+        </div>
+      </li>
+      <li onclick="toggleStrategy(this)">
+        <strong>Interval exaggeration</strong>
+        <p>Practice with exaggerated intervals</p>
+        <div class="strategy-detail">
+          Overshoot the target note slightly, then correct.
+          This builds physical awareness of where correct pitch lives in your body and on the instrument.
+        </div>
+      </li>
+      <li onclick="toggleStrategy(this)">
+        <strong>Prepare target note</strong>
+        <p>Secure the note before the shift</p>
+        <div class="strategy-detail">
+          Stop before the problematic note. Place the finger, check intonation, then play.
+          Build muscle memory for the correct position before adding flow.
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ── Screen 7: Success ──────────────────────────────────────────────── -->
+  <div id="screen7" class="screen">
+    <div class="header">
+      <h1>Great work!</h1>
+      <p>Session summary</p>
+    </div>
+    <div class="comparison-card">
+      <h3>Completed</h3>
+      <p style="font-size:13px; color:var(--color-text-secondary); margin-top:0.5rem; line-height:1.7;">
+        ✓ Practice session recorded<br>
+        ✓ Recording reviewed<br>
+        ✓ Matched mental representation
+      </p>
+    </div>
+    <div class="question" style="margin-top:1.5rem;">What would you like to do next?</div>
+    <div class="btn-group">
+      <button class="btn-secondary" onclick="goTo('screen2')">Practice another excerpt</button>
+      <button class="btn-secondary" onclick="goTo('screen2')">Play through with different focus</button>
+      <button class="btn-secondary" onclick="endSession()">End practice session</button>
+    </div>
+  </div>
+
+  <!-- ── Admin screen ────────────────────────────────────────────────────── -->
+  <div id="screen-admin" class="screen">
+    <!-- Rendered by AdminModule.render() -->
+  </div>
+
+</div><!-- /.app-container -->
+
+<script src="config.js"></script>
+<script src="js/drone.js"></script>
+<script src="js/metronome.js"></script>
+<script src="js/youtube.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
