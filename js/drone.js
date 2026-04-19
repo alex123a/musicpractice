@@ -1,12 +1,13 @@
 const DroneModule = (() => {
   const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  // Semitone offsets from A4 (octave 4)
   const NOTE_OFFSETS = { C: -9, 'C#': -8, D: -7, 'D#': -6, E: -5, F: -4, 'F#': -3, G: -2, 'G#': -1, A: 0, 'A#': 1, B: 2 };
+  const FIFTH_RATIO = Math.pow(2, 7 / 12); // perfect fifth above
 
-  let audioCtx = null;
-  let droneNodes = [];  // all active oscillators/nodes for cleanup
-  let masterGain = null;
-  let isPlaying = false;
+  let audioCtx    = null;
+  let droneNodes  = [];
+  let masterGain  = null;
+  let isPlaying   = false;
+  let droneMode   = 'orchestra'; // 'pure' | 'orchestra'
   let currentNote = 'A';
   let currentAStandard = CONFIG.defaultAStandard;
 
@@ -14,28 +15,31 @@ const DroneModule = (() => {
     return aStandard * Math.pow(2, NOTE_OFFSETS[note] / 12);
   }
 
-  // Build a rich drone: fundamental + 4 harmonics + slight stereo detune
-  function buildDrone(freq) {
+  // ── Pure mode: single-layer harmonic sine stack ───────────────────────────
+  function buildPureDrone(freq) {
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0;
-    masterGain.connect(audioCtx.destination);
 
-    // Each harmonic: [multiplier, relative gain, detune cents]
-    const harmonics = [
-      [1,    0.50,  0],     // fundamental
-      [2,    0.20,  1.5],   // octave
-      [3,    0.12,  0],     // fifth above octave
-      [4,    0.08, -1.5],   // two octaves
-      [5,    0.05,  0],     // major third above that
-      [0.5,  0.06,  0],     // sub-octave for warmth
-    ];
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = freq * 6;
+    filter.Q.value = 0.7;
+    masterGain.connect(filter);
+    filter.connect(audioCtx.destination);
+    droneNodes.push(filter);
 
-    harmonics.forEach(([mult, gain, detuneCents]) => {
+    [
+      [1,   0.50,  0   ],
+      [2,   0.20,  1.5 ],
+      [3,   0.12,  0   ],
+      [4,   0.08, -1.5 ],
+      [5,   0.05,  0   ],
+      [0.5, 0.06,  0   ],
+    ].forEach(([mult, gain, detune]) => {
       const osc = audioCtx.createOscillator();
       const g   = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.value = freq * mult;
-      osc.detune.value = detuneCents;
+      osc.detune.value = detune;
       g.gain.value = gain;
       osc.connect(g);
       g.connect(masterGain);
@@ -43,43 +47,115 @@ const DroneModule = (() => {
       droneNodes.push(osc, g);
     });
 
-    // Gentle low-pass filter to remove harshness
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = freq * 6;
-    filter.Q.value = 0.7;
-    masterGain.disconnect();
-    masterGain.connect(filter);
-    filter.connect(audioCtx.destination);
-    droneNodes.push(filter);
-
-    // Fade in over 80ms to avoid click
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
     masterGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.08);
+  }
+
+  // ── Orchestra mode: ensemble detuning + vibrato + fifth ──────────────────
+  function buildOrchestralDrone(freq) {
+    masterGain = audioCtx.createGain();
+
+    // Warm low-pass + subtle high shelf cut
+    const lpf = audioCtx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 3800;
+    lpf.Q.value = 0.5;
+
+    const shelf = audioCtx.createBiquadFilter();
+    shelf.type = 'highshelf';
+    shelf.frequency.value = 2000;
+    shelf.gain.value = -6; // roll off high end for warmth
+
+    masterGain.connect(lpf);
+    lpf.connect(shelf);
+    shelf.connect(audioCtx.destination);
+    droneNodes.push(lpf, shelf);
+
+    // Vibrato LFO — 5.5 Hz, ±6 cents, simulates natural bow variation
+    const lfo     = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.value = 5.5;
+    lfoGain.gain.value = 6;
+    lfo.connect(lfoGain);
+    lfo.start();
+    droneNodes.push(lfo, lfoGain);
+
+    // Each entry: [freq multiplier, total gain, ensemble spread cents]
+    // 3 oscillators per harmonic, spread across ±spread cents
+    const harmonics = [
+      [1,    0.38, 8 ],  // fundamental — wide ensemble spread
+      [2,    0.18, 7 ],  // octave
+      [3,    0.11, 9 ],  // fifth above octave
+      [4,    0.07, 6 ],  // two octaves
+      [5,    0.04, 7 ],  // major third above that
+      [6,    0.025,5 ],  // natural 6th harmonic
+      [7,    0.015,5 ],  // natural 7th (slightly flat — just tuning flavour)
+      [0.5,  0.06, 4 ],  // sub-octave for body
+    ];
+
+    harmonics.forEach(([mult, totalGain, spread]) => {
+      [-spread, 0, spread].forEach(detune => {
+        const osc = audioCtx.createOscillator();
+        const g   = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq * mult;
+        osc.detune.value = detune;
+        g.gain.value = totalGain / 3;
+        lfoGain.connect(osc.detune); // vibrato on each oscillator
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        droneNodes.push(osc, g);
+      });
+    });
+
+    // Fifth — very subtle, 2 detuned oscillators to keep it soft
+    const fifthFreq = freq * FIFTH_RATIO;
+    [-5, 5].forEach(detune => {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = fifthFreq;
+      osc.detune.value = detune;
+      g.gain.value = 0.055; // barely audible — felt more than heard
+      lfoGain.connect(osc.detune);
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start();
+      droneNodes.push(osc, g);
+    });
+
+    // Slow bow-like attack (400ms) for the orchestral feel
+    masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
+  }
+
+  // ── Core controls ─────────────────────────────────────────────────────────
+  function buildDrone(freq) {
+    if (droneMode === 'orchestra') buildOrchestralDrone(freq);
+    else buildPureDrone(freq);
   }
 
   function start() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     stopNodes();
-
     buildDrone(getFrequency(currentNote, currentAStandard));
     isPlaying = true;
     refreshPlayButtons();
   }
 
   function stopNodes() {
-    // Capture and clear module refs immediately so buildDrone() can run right after
     const oldNodes = droneNodes;
     const oldGain  = masterGain;
-    droneNodes  = [];
-    masterGain  = null;
+    droneNodes = [];
+    masterGain = null;
 
     if (oldGain) {
       oldGain.gain.setValueAtTime(oldGain.gain.value, audioCtx.currentTime);
       oldGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
     }
-    // Dispose old nodes after fade-out completes
     setTimeout(() => {
       oldNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
       try { oldGain && oldGain.disconnect(); } catch(e){}
@@ -91,6 +167,8 @@ const DroneModule = (() => {
     isPlaying = false;
     refreshPlayButtons();
   }
+
+  function toggle() { if (isPlaying) stop(); else start(); }
 
   function setNote(note) {
     currentNote = note;
@@ -105,6 +183,13 @@ const DroneModule = (() => {
     refreshAStandardLabels();
   }
 
+  function setMode(mode) {
+    droneMode = mode;
+    refreshModeButtons();
+    if (isPlaying) { stop(); start(); }
+  }
+
+  // ── DOM refresh helpers ───────────────────────────────────────────────────
   function refreshPlayButtons() {
     document.querySelectorAll('.drone-play-btn').forEach(btn => {
       btn.textContent = isPlaying ? '■ Stop drone' : '▶ Play drone';
@@ -119,18 +204,20 @@ const DroneModule = (() => {
   }
 
   function refreshAStandardLabels() {
-    document.querySelectorAll('.a-standard-val').forEach(el => {
-      el.textContent = currentAStandard;
-    });
-    document.querySelectorAll('.a-standard-slider').forEach(el => {
-      el.value = currentAStandard;
+    document.querySelectorAll('.a-standard-val').forEach(el => el.textContent = currentAStandard);
+    document.querySelectorAll('.a-standard-slider').forEach(el => el.value = currentAStandard);
+  }
+
+  function refreshModeButtons() {
+    document.querySelectorAll('.drone-mode-pill').forEach(pill => {
+      pill.classList.toggle('active', pill.dataset.mode === droneMode);
     });
   }
 
   function refreshYouTubeEmbed() {
     document.querySelectorAll('.drone-yt-embed').forEach(wrap => {
-      const videoId = getDroneVideoId(currentNote);
       if (wrap.closest('details').open) {
+        const videoId = getDroneVideoId(currentNote);
         wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" allowfullscreen></iframe>`;
       } else {
         wrap.innerHTML = '';
@@ -143,9 +230,11 @@ const DroneModule = (() => {
     return saved[note] || CONFIG.droneVideoIds[note] || '';
   }
 
+  // ── HTML builders ─────────────────────────────────────────────────────────
   function buildFullHTML() {
     const notePills = NOTES.map(n =>
-      `<button class="note-pill${n === currentNote ? ' active' : ''}" data-note="${n}" onclick="DroneModule.setNote('${n}')">${n}</button>`
+      `<button class="note-pill${n === currentNote ? ' active' : ''}" data-note="${n}"
+               onclick="DroneModule.setNote('${n}')">${n}</button>`
     ).join('');
 
     return `
@@ -158,6 +247,15 @@ const DroneModule = (() => {
           <label>A = <span class="a-standard-val">${currentAStandard}</span> Hz</label>
           <input type="range" class="a-standard-slider" min="415" max="445" step="1" value="${currentAStandard}"
                  oninput="DroneModule.setAStandard(parseInt(this.value))">
+        </div>
+        <div>
+          <div class="metro-row-label">Tone</div>
+          <div class="pill-row">
+            <button class="pill drone-mode-pill${droneMode === 'pure' ? ' active' : ''}"
+                    data-mode="pure" onclick="DroneModule.setMode('pure')">Pure sine</button>
+            <button class="pill drone-mode-pill${droneMode === 'orchestra' ? ' active' : ''}"
+                    data-mode="orchestra" onclick="DroneModule.setMode('orchestra')">Orchestra ✦</button>
+          </div>
         </div>
         <button class="drone-play-btn${isPlaying ? ' playing' : ''}" onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop drone' : '▶ Play drone'}
@@ -174,7 +272,7 @@ const DroneModule = (() => {
     return `
       <div class="mini-drone-row">
         <div class="mini-note-display">${currentNote}</div>
-        <div class="mini-info">${freq} Hz · A=${currentAStandard}</div>
+        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${droneMode === 'orchestra' ? 'Orchestra' : 'Pure'}</div>
         <button class="btn-secondary btn-sm mini-play-btn drone-play-btn${isPlaying ? ' playing' : ''}"
                 onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop' : '▶ Play'}
@@ -182,17 +280,8 @@ const DroneModule = (() => {
       </div>`;
   }
 
-  function render(container) {
-    container.innerHTML = buildFullHTML();
-  }
-
-  function renderMini(container) {
-    container.innerHTML = buildMiniHTML();
-  }
-
-  function toggle() {
-    if (isPlaying) stop(); else start();
-  }
+  function render(container)     { container.innerHTML = buildFullHTML(); }
+  function renderMini(container) { container.innerHTML = buildMiniHTML(); }
 
   function onYtToggle(details) {
     const embed = details.querySelector('.drone-yt-embed');
@@ -204,5 +293,5 @@ const DroneModule = (() => {
     }
   }
 
-  return { render, renderMini, toggle, start, stop, setNote, setAStandard, onYtToggle, isPlaying: () => isPlaying };
+  return { render, renderMini, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
 })();
