@@ -405,6 +405,7 @@ async function renderTagsScreen() {
         <div class="session-group-header">
           <span>${dateStr}</span>
           <span class="session-group-dur">${dur}</span>
+          <button class="session-delete-btn" onclick="deleteSessionAndRefresh(${session.id})" title="Delete session">✕</button>
         </div>
         <div class="session-mini-player">
           <button class="s5-play-btn session-play-btn" id="sp-btn-${session.id}"
@@ -444,6 +445,22 @@ function skipTagsScreen() {
   state.savedSessionId = null;
   stopAllSessionPlayers();
   goTo('screen2');
+}
+
+async function deleteSessionAndRefresh(sessionId) {
+  if (!confirm('Delete this session and all its tags?')) return;
+  try {
+    if (_sessionPlayers[sessionId]) {
+      try { _sessionPlayers[sessionId].pause(); } catch(e) {}
+      delete _sessionPlayers[sessionId];
+    }
+    await DB.deleteSession(sessionId);
+    refreshExcerptBadge();
+    renderTagsScreen();
+  } catch(e) {
+    console.error(e);
+    alert('Could not delete session.');
+  }
 }
 
 // ── Excerpt badge ──────────────────────────────────────────────────────────
@@ -496,6 +513,11 @@ async function startRecording() {
       state.audioBlob        = blob;
       state.recordedAudioURL = URL.createObjectURL(blob);
       stream.getTracks().forEach(t => t.stop());
+      // Reveal controls only after blob is ready — prevents race condition
+      // where user taps Analyze before audioBlob is set
+      document.getElementById('recStatus').textContent = 'Recording complete';
+      document.getElementById('playbackControls').style.display = 'flex';
+      document.getElementById('analyzeBtn').style.display = 'block';
     };
 
     state.mediaRecorder.start();
@@ -525,9 +547,7 @@ function stopRecording() {
   clearInterval(state.timerInterval);
 
   document.getElementById('recIcon').classList.remove('recording');
-  document.getElementById('recStatus').textContent = 'Recording complete';
-  document.getElementById('playbackControls').style.display = 'flex';
-  document.getElementById('analyzeBtn').style.display = 'block';
+  document.getElementById('recStatus').textContent = 'Processing…';
 }
 
 function playRecording() {
