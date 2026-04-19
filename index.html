@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music Practice Coach</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#185FA5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Practice">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -253,6 +259,11 @@
 
 </div><!-- /.app-container -->
 
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
 <script src="config.js"></script>
 <script src="js/drone.js"></script>
 <script src="js/metronome.js"></script>
