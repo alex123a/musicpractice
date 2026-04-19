@@ -46,8 +46,23 @@
     <div class="question">Do you want to play through or work on a short excerpt?</div>
     <div class="btn-group">
       <button class="btn-secondary" onclick="setMode('playthrough')">Play through entire piece</button>
-      <button class="btn-secondary" onclick="setMode('excerpt')">Work on short excerpt</button>
+      <button class="btn-secondary" id="excerpt-btn" onclick="setMode('excerpt')">Work on short excerpt</button>
     </div>
+  </div>
+
+  <!-- ── Screen: Tag list (excerpt mode, when tags exist) ──────────────── -->
+  <div id="screen-tags" class="screen">
+    <button class="back-btn" onclick="goTo('screen1')">← Back</button>
+    <div class="header">
+      <h1>Problem sections</h1>
+      <p>Saved from your play-through sessions</p>
+    </div>
+    <div class="question">Pick a section to work on, or start fresh:</div>
+    <div id="tags-screen-body" class="tag-list-container"></div>
+    <button class="btn-secondary" style="width:100%; margin-top:1rem;"
+            onclick="skipTagsScreen()">
+      Start fresh (no specific section)
+    </button>
   </div>
 
   <!-- ── Screen 2: Focus selection ─────────────────────────────────────── -->
@@ -119,6 +134,9 @@
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
 
+    <!-- Selected tag context (excerpt mode) -->
+    <div id="s4-tag-context" class="tag-context-banner" style="display:none;"></div>
+
     <!-- Mini reference panel -->
     <details class="mini-ref-panel" open>
       <summary id="s4-focus-label">Reference</summary>
@@ -144,35 +162,25 @@
     </button>
   </div>
 
-  <!-- ── Screen 5: Evaluation ───────────────────────────────────────────── -->
+  <!-- ── Screen 5: Evaluation / Tagger ─────────────────────────────────── -->
   <div id="screen5" class="screen">
     <button class="back-btn" onclick="goTo('screen4')">← Back</button>
     <div class="header">
-      <h1>Evaluation</h1>
+      <h1 id="s5-title">Evaluation</h1>
       <p>Compare to your mental representation</p>
     </div>
 
-    <div class="s5-player">
-      <div class="s5-player-info">
-        <span id="s5-recording-duration">Your recording</span>
-        <span id="s5-playback-time" class="s5-playback-time">0:00</span>
-      </div>
-      <div class="s5-player-controls">
-        <button class="s5-play-btn" id="s5-play-btn" onclick="toggleS5Playback()">▶</button>
-        <div class="s5-progress-wrap" onclick="seekS5(event)">
-          <div class="s5-progress-bar">
-            <div class="s5-progress-fill" id="s5-progress-fill"></div>
-          </div>
-        </div>
-        <button class="s5-download-btn" id="s5-download-btn" onclick="downloadRecording()" title="Download recording">⬇</button>
-      </div>
-    </div>
+    <!-- Dynamic body: S5 player (excerpt mode) OR Tagger (playthrough mode) -->
+    <div id="s5-body"></div>
 
-    <div class="feedback-section">
-      <div class="feedback-question">Did it match your represented idea?</div>
-      <div class="btn-group">
-        <button class="btn-secondary" onclick="goTo('screen7')">Yes, sounded good</button>
-        <button class="btn-secondary" onclick="goTo('screen6')">No, there were issues</button>
+    <!-- Evaluation questions — only shown in excerpt mode -->
+    <div id="s5-eval-section" style="display:none;">
+      <div class="feedback-section">
+        <div class="feedback-question">Did it match your represented idea?</div>
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="goTo('screen7')">Yes, sounded good</button>
+          <button class="btn-secondary" onclick="goTo('screen6')">No, there were issues</button>
+        </div>
       </div>
     </div>
   </div>
@@ -276,10 +284,12 @@
   }
 </script>
 <script src="config.js"></script>
+<script src="js/db.js"></script>
 <script src="js/drone.js"></script>
 <script src="js/metronome.js"></script>
 <script src="js/youtube.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/tagger.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
