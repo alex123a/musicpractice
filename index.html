@@ -152,9 +152,20 @@
       <p>Compare to your mental representation</p>
     </div>
 
-    <div class="audio-ref" style="margin-bottom:1.25rem; cursor:pointer;" onclick="playS5Recording()">
-      <button class="play-mini">▶</button>
-      <span id="s5-recording-duration">Your recording</span>
+    <div class="s5-player">
+      <div class="s5-player-info">
+        <span id="s5-recording-duration">Your recording</span>
+        <span id="s5-playback-time" class="s5-playback-time">0:00</span>
+      </div>
+      <div class="s5-player-controls">
+        <button class="s5-play-btn" id="s5-play-btn" onclick="toggleS5Playback()">▶</button>
+        <div class="s5-progress-wrap" onclick="seekS5(event)">
+          <div class="s5-progress-bar">
+            <div class="s5-progress-fill" id="s5-progress-fill"></div>
+          </div>
+        </div>
+        <button class="s5-download-btn" id="s5-download-btn" onclick="downloadRecording()" title="Download recording">⬇</button>
+      </div>
     </div>
 
     <div class="feedback-section">

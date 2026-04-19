@@ -9,6 +9,8 @@ const state = {
   mediaRecorder: null,
   audioChunks: [],
   timerInterval: null,
+  playbackAudio: null,
+  playbackRAF: null,
 };
 
 // ── Navigation ─────────────────────────────────────────────────────────────
@@ -62,9 +64,16 @@ function onScreenEnter(screenId) {
   }
 
   if (screenId === 'screen5') {
+    stopS5Playback();
     const mins = Math.floor(state.recordingTime / 60).toString().padStart(2, '0');
     const secs = (state.recordingTime % 60).toString().padStart(2, '0');
-    setText('s5-recording-duration', `Your recording (${mins}:${secs})`);
+    setText('s5-recording-duration', `Your recording · ${mins}:${secs}`);
+    // reset progress bar
+    const fill = document.getElementById('s5-progress-fill');
+    if (fill) fill.style.width = '0%';
+    setText('s5-playback-time', '0:00');
+  } else {
+    stopS5Playback();
   }
 }
 
@@ -184,10 +193,80 @@ function playRecording() {
   }
 }
 
-function playS5Recording() {
-  if (state.recordedAudioURL) {
-    new Audio(state.recordedAudioURL).play();
+function toggleS5Playback() {
+  if (!state.recordedAudioURL) return;
+
+  if (!state.playbackAudio) {
+    state.playbackAudio = new Audio(state.recordedAudioURL);
+    state.playbackAudio.onended = () => {
+      updatePlayBtn(false);
+      cancelAnimationFrame(state.playbackRAF);
+      setText('s5-playback-time', '0:00');
+      const fill = document.getElementById('s5-progress-fill');
+      if (fill) fill.style.width = '0%';
+      state.playbackAudio = null;
+    };
   }
+
+  if (state.playbackAudio.paused) {
+    state.playbackAudio.play();
+    updatePlayBtn(true);
+    tickPlayback();
+  } else {
+    state.playbackAudio.pause();
+    updatePlayBtn(false);
+    cancelAnimationFrame(state.playbackRAF);
+  }
+}
+
+function tickPlayback() {
+  const audio = state.playbackAudio;
+  if (!audio || audio.paused) return;
+
+  const elapsed  = audio.currentTime;
+  const duration = audio.duration || 1;
+  const pct      = Math.min((elapsed / duration) * 100, 100);
+
+  const fill = document.getElementById('s5-progress-fill');
+  if (fill) fill.style.width = pct + '%';
+
+  const m = Math.floor(elapsed / 60);
+  const s = Math.floor(elapsed % 60).toString().padStart(2, '0');
+  setText('s5-playback-time', `${m}:${s}`);
+
+  state.playbackRAF = requestAnimationFrame(tickPlayback);
+}
+
+function seekS5(e) {
+  const audio = state.playbackAudio;
+  if (!audio || !audio.duration) return;
+  const bar  = e.currentTarget.querySelector('.s5-progress-bar');
+  const rect = bar.getBoundingClientRect();
+  const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audio.currentTime = pct * audio.duration;
+}
+
+function updatePlayBtn(playing) {
+  const btn = document.getElementById('s5-play-btn');
+  if (btn) btn.textContent = playing ? '⏸' : '▶';
+}
+
+function stopS5Playback() {
+  if (state.playbackAudio) {
+    state.playbackAudio.pause();
+    state.playbackAudio = null;
+  }
+  cancelAnimationFrame(state.playbackRAF);
+  updatePlayBtn(false);
+}
+
+function downloadRecording() {
+  if (!state.recordedAudioURL) return;
+  const a = document.createElement('a');
+  a.href = state.recordedAudioURL;
+  const name = (state.pieceName || 'recording').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  a.download = `${name}_practice.webm`;
+  a.click();
 }
 
 function resetRecording() {

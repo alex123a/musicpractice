@@ -856,6 +856,103 @@ button {
 
 .icon-btn:hover { background: var(--color-background-secondary); }
 
+/* ── S5 audio player ── */
+.s5-player {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 1.25rem;
+}
+
+.s5-player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.s5-player-info span:first-child {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.s5-playback-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.s5-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.s5-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-background-info);
+  color: var(--color-text-info);
+  border: 0.5px solid var(--color-border-info);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  text-align: center;
+  transition: filter 0.15s;
+}
+
+.s5-play-btn:hover { filter: brightness(0.9); }
+
+.s5-progress-wrap {
+  flex: 1;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.s5-progress-bar {
+  height: 4px;
+  background: var(--color-background-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.s5-progress-fill {
+  height: 100%;
+  background: var(--color-border-info);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.s5-download-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.s5-download-btn:hover {
+  background: var(--color-background-tertiary);
+  border-color: var(--color-border-secondary);
+}
+
 /* ── Feedback / evaluation ── */
 .feedback-section { margin-top: 1.25rem; }
 .feedback-question { font-size: 14px; color: var(--color-text-primary); margin-bottom: 0.75rem; }
