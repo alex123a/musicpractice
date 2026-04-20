@@ -1,4 +1,4 @@
-const CACHE = 'practice-coach-v2';
+const CACHE = 'practice-coach-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './js/youtube.js',
   './js/admin.js',
   './js/tagger.js',
+  './js/sidebar.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

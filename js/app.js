@@ -15,6 +15,7 @@ const state = {
   tags            : [],
   savedSessionId  : null,
   selectedTag     : null,
+  isIsolatedPassage: false,
 };
 
 // ── Session audio players (tags screen) ────────────────────────────────────
@@ -179,9 +180,9 @@ function onScreenEnter(screenId) {
       if (state.selectedFocus === 'pitch') notePickerPanel.open = false;
     }
 
-    // Skip-to-eval button: only in excerpt mode
+    // Skip-to-eval button: only in isolated-passage sub-loop
     const skipBtn = document.getElementById('skip-to-eval-btn');
-    if (skipBtn) skipBtn.style.display = state.mode === 'excerpt' ? 'block' : 'none';
+    if (skipBtn) skipBtn.style.display = (state.mode === 'excerpt' && state.isIsolatedPassage) ? 'block' : 'none';
 
     if (state.selectedFocus !== 'none') renderMiniPanel();
   }
@@ -310,6 +311,11 @@ function renderScreen3() {
           <div id="${toolId}"></div>
         </details>
       </div>
+      <div class="clarify-continue">
+        <button class="btn-primary" style="width:100%;" onclick="goTo('screen4')">
+          Continue to recording →
+        </button>
+      </div>
     </div>`;
 
   document.getElementById('yt-details').addEventListener('toggle', function() {
@@ -334,6 +340,12 @@ function showClarifySection() {
 // ── Screen 4 helpers ────────────────────────────────────────────────────────
 function onNotePickerToggle(details) {
   if (details.open) DroneModule.renderNotePicker(document.getElementById('note-picker-container'));
+}
+
+function recordIsolatedPassage() {
+  resetRecording();
+  state.isIsolatedPassage = true;
+  goTo('screen4');
 }
 
 function skipToEvaluation() {
@@ -705,13 +717,14 @@ function downloadRecording() {
 }
 
 function resetRecording() {
-  state.isRecording      = false;
-  state.recordingTime    = 0;
-  state.recordedAudioURL = null;
-  state.audioBlob        = null;
-  state.audioChunks      = [];
-  state.tags             = [];
-  state.savedSessionId   = null;
+  state.isRecording        = false;
+  state.recordingTime      = 0;
+  state.recordedAudioURL   = null;
+  state.audioBlob          = null;
+  state.audioChunks        = [];
+  state.tags               = [];
+  state.savedSessionId     = null;
+  state.isIsolatedPassage  = false;
   clearInterval(state.timerInterval);
 
   const els = {

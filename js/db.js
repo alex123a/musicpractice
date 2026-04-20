@@ -101,6 +101,25 @@ const DB = (() => {
     }));
   }
 
+  // Set practiced flag for a single tag (accepts boolean)
+  function setTagPracticed(sessionId, tagId, practiced) {
+    return open().then(db => new Promise((resolve, reject) => {
+      const t     = db.transaction('sessions', 'readwrite');
+      const store = t.objectStore('sessions');
+      const req   = store.get(sessionId);
+      req.onsuccess = () => {
+        const session = req.result;
+        if (!session) return reject(new Error('Session not found'));
+        const tag = session.tags.find(tg => tg.id === tagId);
+        if (tag) tag.practiced = practiced;
+        const upd = store.put(session);
+        upd.onsuccess = () => resolve();
+        upd.onerror   = () => reject(upd.error);
+      };
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
   // Update all tags for a session (e.g. after label edits)
   function updateSessionTags(sessionId, tags) {
     return open().then(db => new Promise((resolve, reject) => {
@@ -119,5 +138,5 @@ const DB = (() => {
     }));
   }
 
-  return { open, saveSession, getSessionsForPiece, getAllSessions, getAudio, deleteSession, markTagPracticed, updateSessionTags };
+  return { open, saveSession, getSessionsForPiece, getAllSessions, getAudio, deleteSession, markTagPracticed, setTagPracticed, updateSessionTags };
 })();
