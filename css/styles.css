@@ -422,7 +422,7 @@ button {
 
 .pendulum-container {
   position: relative;
-  width: 60px;
+  width: 100px;
   height: 90px;
 }
 
@@ -452,6 +452,20 @@ button {
 }
 
 /* pendulum motion is JS-driven via requestAnimationFrame — no CSS animation */
+
+/* ── Pendulum walls (lit up by Web Animations API on each beat) ── */
+.pendulum-wall {
+  position: absolute;
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--color-text-secondary);
+  opacity: 0.18;
+  top: 62px;
+}
+
+.pendulum-wall-left  { left: 8px; }
+.pendulum-wall-right { right: 8px; }
 
 .pendulum-bob {
   width: 16px;
@@ -552,6 +566,39 @@ button {
   color: var(--color-text-info);
   border-color: var(--color-border-info);
 }
+
+/* ── Metronome config expandable (screen 4) ── */
+.metro-config-details {
+  border-top: 0.5px solid var(--color-border-tertiary);
+  margin-top: 0.75rem;
+  padding-top: 0.1rem;
+}
+
+.metro-config-summary {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  list-style: none;
+  padding: 0.45rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.metro-config-summary::-webkit-details-marker { display: none; }
+
+.metro-config-summary::after {
+  content: '›';
+  font-size: 16px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.metro-config-details[open] .metro-config-summary::after { transform: rotate(90deg); }
+
+.metro-config-details > div { padding-top: 0.5rem; }
 
 /* ── YouTube search ── */
 .yt-search-row {

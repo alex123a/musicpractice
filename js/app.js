@@ -134,6 +134,12 @@ function goTo(screenId) {
 function onScreenEnter(screenId) {
   const name = state.pieceName || 'Your piece';
 
+  // Stop audio tools whenever leaving screen 4 (they persist through 3→4 transition)
+  if (screenId !== 'screen4') {
+    MetronomeModule.stop();
+    DroneModule.stop();
+  }
+
   if (screenId !== 'screen-tags') stopAllSessionPlayers();
 
   if (screenId === 'screen1') {
@@ -173,9 +179,7 @@ function onScreenEnter(screenId) {
     const miniRefPanel = document.querySelector('.mini-ref-panel');
     if (miniRefPanel) {
       miniRefPanel.style.display = state.selectedFocus === 'none' ? 'none' : '';
-      // Rhythm: start collapsed (full controls rendered, user opens when needed)
-      // Pitch: start open (compact mini drone)
-      if (state.selectedFocus !== 'none') miniRefPanel.open = state.selectedFocus !== 'rhythm';
+      if (state.selectedFocus !== 'none') miniRefPanel.open = true;
     }
 
     // Note picker: only for pitch focus
@@ -380,8 +384,23 @@ function buildS5PlayerHTML() {
 function renderMiniPanel() {
   const bodyEl = document.getElementById('mini-ref-body');
   if (!bodyEl) return;
-  if (state.selectedFocus === 'pitch') DroneModule.renderMini(bodyEl);
-  else MetronomeModule.render(bodyEl); // full controls on screen 4 for rhythm
+  if (state.selectedFocus === 'pitch') {
+    DroneModule.renderMini(bodyEl);
+  } else {
+    // Pendulum + start/stop always visible; BPM/timesig/subdivision in collapsible section
+    bodyEl.innerHTML = `
+      <div class="metro-tool">
+        <div id="metro-s4-display"></div>
+        <details class="metro-config-details">
+          <summary class="metro-config-summary">Configure metronome</summary>
+          <div id="metro-s4-config"></div>
+        </details>
+      </div>`;
+    MetronomeModule.renderDisplay(document.getElementById('metro-s4-display'));
+    bodyEl.querySelector('.metro-config-details').addEventListener('toggle', function() {
+      if (this.open) MetronomeModule.renderConfig(document.getElementById('metro-s4-config'));
+    });
+  }
 }
 
 function setText(id, text) {

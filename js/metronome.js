@@ -73,12 +73,16 @@ const MetronomeModule = (() => {
 
   function scheduler() {
     while (nextNoteTime < audioCtx.currentTime + SCHEDULE_AHEAD) {
-      const isAccent = currentBeat === 0;
+      const isAccent         = currentBeat === 0;
       scheduleBeat(nextNoteTime, isAccent);
 
-      const capturedBeat = currentBeat;
+      const capturedBeat     = currentBeat;
+      const capturedBeatTime = nextNoteTime;
       const delay = Math.max(0, (nextNoteTime - audioCtx.currentTime) * 1000);
-      setTimeout(() => highlightBeat(capturedBeat), delay);
+      setTimeout(() => {
+        highlightBeat(capturedBeat);
+        _flashWallForBeat(capturedBeatTime);
+      }, delay);
 
       currentBeat = (currentBeat + 1) % getBeatsPerMeasure();
       nextNoteTime += getBeatDuration();
@@ -96,10 +100,26 @@ const MetronomeModule = (() => {
     });
   }
 
-  // ── JS-driven pendulum (cos-based, synced to audioCtx.currentTime) ────────
-  // angle = MAX_ANGLE × cos(π × elapsed/beatDuration)
-  // At every integer elapsed/beatDuration the bob is exactly at an extreme (±MAX_ANGLE),
-  // which is precisely when each beat click fires.
+  // ── Wall flash ────────────────────────────────────────────────────────────
+  // Called at the exact moment of each beat click; flashes the wall the bob
+  // is hitting. Parity is derived from how many beats have elapsed since start,
+  // which matches the cos() phase used to drive the pendulum arm.
+  function _flashWallForBeat(beatTime) {
+    if (_firstBeatTime === null) return;
+    const elapsed   = beatTime - _firstBeatTime;
+    const beatDur   = getBeatDuration();
+    const beatIndex = Math.round(elapsed / beatDur);
+    // Even beats → right extreme (+angle); odd beats → left extreme (−angle)
+    const side = ((beatIndex % 2) + 2) % 2 === 0 ? 'right' : 'left';
+    document.querySelectorAll(`.pendulum-wall-${side}`).forEach(wall => {
+      wall.animate(
+        [{ opacity: 0.18 }, { opacity: 0.85, offset: 0.1 }, { opacity: 0.18 }],
+        { duration: 500, easing: 'ease-out' }
+      );
+    });
+  }
+
+  // ── JS-driven pendulum ────────────────────────────────────────────────────
   function _startPendulumLoop(firstBeatTime) {
     _firstBeatTime = firstBeatTime;
     if (_pendulumRAF) cancelAnimationFrame(_pendulumRAF);
@@ -151,7 +171,6 @@ const MetronomeModule = (() => {
   function setBPM(val) {
     bpm = Math.min(300, Math.max(20, val));
     refreshBPMDisplay();
-    // Reset pendulum phase origin so the bob re-aligns to the new tempo immediately
     if (isRunning && audioCtx) _firstBeatTime = audioCtx.currentTime;
   }
 
@@ -209,7 +228,28 @@ const MetronomeModule = (() => {
   }
 
   // ── HTML builders ─────────────────────────────────────────────────────────
-  function buildFullHTML() {
+  // Display section: pendulum (with walls) + beat dots + start/stop.
+  // Used standalone on screen 4 and embedded inside buildFullHTML for screen 3.
+  function buildDisplayHTML() {
+    return `
+      <div class="pendulum-wrap">
+        <div class="pendulum-container">
+          <div class="pendulum-pivot"></div>
+          <div class="pendulum-wall pendulum-wall-left"></div>
+          <div class="pendulum-wall pendulum-wall-right"></div>
+          <div class="pendulum-arm">
+            <div class="pendulum-bob"></div>
+          </div>
+        </div>
+        <div class="beat-dots">${buildBeatDotsHTML()}</div>
+      </div>
+      <button class="metro-start-btn${isRunning ? ' running' : ''}" onclick="MetronomeModule.toggle()">
+        ${isRunning ? '■ Stop' : '▶ Start'}
+      </button>`;
+  }
+
+  // Config section: BPM, time signature, subdivision — no pendulum.
+  function buildConfigHTML() {
     const timeSigPills = TIME_SIGS.map(s =>
       `<button class="pill${s === timeSig ? ' active' : ''}" data-timesig="${s}"
                onclick="MetronomeModule.setTimeSig('${s}')">${s}</button>`
@@ -221,39 +261,29 @@ const MetronomeModule = (() => {
     ).join('');
 
     return `
+      <div class="metro-bpm-row">
+        <input type="range" class="bpm-slider" min="20" max="300" value="${bpm}"
+               oninput="MetronomeModule.setBPM(parseInt(this.value))">
+        <div>
+          <div class="bpm-display">${bpm}</div>
+          <div class="bpm-label">BPM</div>
+        </div>
+      </div>
+      <div>
+        <div class="metro-row-label">Time signature</div>
+        <div class="pill-row">${timeSigPills}</div>
+      </div>
+      <div>
+        <div class="metro-row-label">Subdivision</div>
+        <div class="pill-row">${subPills}</div>
+      </div>`;
+  }
+
+  function buildFullHTML() {
+    return `
       <div class="metro-tool">
-        <div class="pendulum-wrap">
-          <div class="pendulum-container">
-            <div class="pendulum-pivot"></div>
-            <div class="pendulum-arm">
-              <div class="pendulum-bob"></div>
-            </div>
-          </div>
-          <div class="beat-dots">${buildBeatDotsHTML()}</div>
-        </div>
-
-        <div class="metro-bpm-row">
-          <input type="range" class="bpm-slider" min="20" max="300" value="${bpm}"
-                 oninput="MetronomeModule.setBPM(parseInt(this.value))">
-          <div>
-            <div class="bpm-display">${bpm}</div>
-            <div class="bpm-label">BPM</div>
-          </div>
-        </div>
-
-        <div>
-          <div class="metro-row-label">Time signature</div>
-          <div class="pill-row">${timeSigPills}</div>
-        </div>
-
-        <div>
-          <div class="metro-row-label">Subdivision</div>
-          <div class="pill-row">${subPills}</div>
-        </div>
-
-        <button class="metro-start-btn${isRunning ? ' running' : ''}" onclick="MetronomeModule.toggle()">
-          ${isRunning ? '■ Stop' : '▶ Start'}
-        </button>
+        ${buildDisplayHTML()}
+        ${buildConfigHTML()}
       </div>`;
   }
 
@@ -273,8 +303,14 @@ const MetronomeModule = (() => {
       </div>`;
   }
 
-  function render(container)     { container.innerHTML = buildFullHTML(); }
-  function renderMini(container) { container.innerHTML = buildMiniHTML(); }
+  function render(container)        { container.innerHTML = buildFullHTML(); }
+  function renderDisplay(container) { container.innerHTML = buildDisplayHTML(); }
+  function renderConfig(container)  { container.innerHTML = buildConfigHTML(); }
+  function renderMini(container)    { container.innerHTML = buildMiniHTML(); }
 
-  return { render, renderMini, toggle, start, stop, setBPM, setTimeSig, setSubdivision, isRunning: () => isRunning };
+  return {
+    render, renderDisplay, renderConfig, renderMini,
+    toggle, start, stop, setBPM, setTimeSig, setSubdivision,
+    isRunning: () => isRunning
+  };
 })();
