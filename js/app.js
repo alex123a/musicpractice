@@ -171,7 +171,12 @@ function onScreenEnter(screenId) {
 
     // Hide mini-ref panel for free-play mode (no focus selected)
     const miniRefPanel = document.querySelector('.mini-ref-panel');
-    if (miniRefPanel) miniRefPanel.style.display = state.selectedFocus === 'none' ? 'none' : '';
+    if (miniRefPanel) {
+      miniRefPanel.style.display = state.selectedFocus === 'none' ? 'none' : '';
+      // Rhythm: start collapsed (full controls rendered, user opens when needed)
+      // Pitch: start open (compact mini drone)
+      if (state.selectedFocus !== 'none') miniRefPanel.open = state.selectedFocus !== 'rhythm';
+    }
 
     // Note picker: only for pitch focus
     const notePickerPanel = document.getElementById('note-picker-panel');
@@ -376,7 +381,7 @@ function renderMiniPanel() {
   const bodyEl = document.getElementById('mini-ref-body');
   if (!bodyEl) return;
   if (state.selectedFocus === 'pitch') DroneModule.renderMini(bodyEl);
-  else MetronomeModule.renderMini(bodyEl);
+  else MetronomeModule.render(bodyEl); // full controls on screen 4 for rhythm
 }
 
 function setText(id, text) {

@@ -10,17 +10,22 @@ const MetronomeModule = (() => {
   const SIG_NUMERATORS   = { '4/4': 4, '3/4': 3, '2/4': 2, '1/4': 1, '6/8': 6, '9/8': 9, '12/8': 12 };
   const SIG_DENOMINATORS = { '4/4': 4, '3/4': 4, '2/4': 4, '1/4': 4, '6/8': 8, '9/8': 8, '12/8': 8 };
 
-  let bpm          = 100;
-  let timeSig      = '4/4';
-  let subdivision  = 'none';
-  let isRunning    = false;
-  let currentBeat  = 0;
-  let nextNoteTime = 0;
+  let bpm            = 100;
+  let timeSig        = '4/4';
+  let subdivision    = 'none';
+  let isRunning      = false;
+  let currentBeat    = 0;
+  let nextNoteTime   = 0;
   let schedulerTimer = null;
-  let audioCtx     = null;
+  let audioCtx       = null;
 
-  const LOOKAHEAD_MS    = 25;
-  const SCHEDULE_AHEAD  = 0.1;
+  // Pendulum state
+  let _pendulumRAF   = null;
+  let _firstBeatTime = null;
+  const _MAX_ANGLE   = 30;
+
+  const LOOKAHEAD_MS   = 25;
+  const SCHEDULE_AHEAD = 0.1;
 
   function getBeatDuration() {
     return (60 / bpm) * (4 / SIG_DENOMINATORS[timeSig]);
@@ -34,8 +39,8 @@ const MetronomeModule = (() => {
     return { none: 1, eighth: 2, triplet: 3, sixteenth: 4 }[subdivision];
   }
 
+  // ── Audio scheduler ───────────────────────────────────────────────────────
   function scheduleClick(time, type) {
-    // type: 'accent' | 'beat' | 'sub'
     const osc  = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -59,7 +64,6 @@ const MetronomeModule = (() => {
 
   function scheduleBeat(beatTime, isAccent) {
     scheduleClick(beatTime, isAccent ? 'accent' : 'beat');
-
     const subCount = getSubdivCount();
     const beatDur  = getBeatDuration();
     for (let i = 1; i < subCount; i++) {
@@ -72,7 +76,6 @@ const MetronomeModule = (() => {
       const isAccent = currentBeat === 0;
       scheduleBeat(nextNoteTime, isAccent);
 
-      // Highlight beat dot at the right time
       const capturedBeat = currentBeat;
       const delay = Math.max(0, (nextNoteTime - audioCtx.currentTime) * 1000);
       setTimeout(() => highlightBeat(capturedBeat), delay);
@@ -93,13 +96,37 @@ const MetronomeModule = (() => {
     });
   }
 
-  function setPendulumDuration() {
-    const dur = getBeatDuration();
+  // ── JS-driven pendulum (cos-based, synced to audioCtx.currentTime) ────────
+  // angle = MAX_ANGLE × cos(π × elapsed/beatDuration)
+  // At every integer elapsed/beatDuration the bob is exactly at an extreme (±MAX_ANGLE),
+  // which is precisely when each beat click fires.
+  function _startPendulumLoop(firstBeatTime) {
+    _firstBeatTime = firstBeatTime;
+    if (_pendulumRAF) cancelAnimationFrame(_pendulumRAF);
+    _pendulumTick();
+  }
+
+  function _pendulumTick() {
+    if (!isRunning || _firstBeatTime === null) return;
+    const t       = audioCtx.currentTime;
+    const beatDur = getBeatDuration();
+    const phase   = (t - _firstBeatTime) / beatDur;
+    const angle   = _MAX_ANGLE * Math.cos(Math.PI * phase);
     document.querySelectorAll('.pendulum-arm, .mini-pendulum-arm').forEach(arm => {
-      arm.style.animationDuration = dur + 's';
+      arm.style.transform = `rotate(${angle}deg)`;
+    });
+    _pendulumRAF = requestAnimationFrame(_pendulumTick);
+  }
+
+  function _stopPendulumLoop() {
+    if (_pendulumRAF) { cancelAnimationFrame(_pendulumRAF); _pendulumRAF = null; }
+    _firstBeatTime = null;
+    document.querySelectorAll('.pendulum-arm, .mini-pendulum-arm').forEach(arm => {
+      arm.style.transform = 'rotate(0deg)';
     });
   }
 
+  // ── Core controls ─────────────────────────────────────────────────────────
   function start() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -107,18 +134,14 @@ const MetronomeModule = (() => {
     currentBeat  = 0;
     nextNoteTime = audioCtx.currentTime + 0.05;
     scheduler();
-    setPendulumDuration();
-    document.querySelectorAll('.pendulum-arm, .mini-pendulum-arm').forEach(arm => arm.classList.add('swinging'));
+    _startPendulumLoop(nextNoteTime);
     refreshRunState();
   }
 
   function stop() {
     clearTimeout(schedulerTimer);
     isRunning = false;
-    document.querySelectorAll('.pendulum-arm, .mini-pendulum-arm').forEach(arm => {
-      arm.classList.remove('swinging');
-      arm.style.transform = 'rotate(0deg)';
-    });
+    _stopPendulumLoop();
     document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
     refreshRunState();
   }
@@ -128,7 +151,8 @@ const MetronomeModule = (() => {
   function setBPM(val) {
     bpm = Math.min(300, Math.max(20, val));
     refreshBPMDisplay();
-    if (isRunning) setPendulumDuration();
+    // Reset pendulum phase origin so the bob re-aligns to the new tempo immediately
+    if (isRunning && audioCtx) _firstBeatTime = audioCtx.currentTime;
   }
 
   function setTimeSig(sig) {
@@ -144,6 +168,7 @@ const MetronomeModule = (() => {
     refreshSubdivision();
   }
 
+  // ── DOM refresh helpers ───────────────────────────────────────────────────
   function refreshBPMDisplay() {
     document.querySelectorAll('.bpm-display').forEach(el => el.textContent = bpm);
     document.querySelectorAll('.bpm-slider').forEach(el => el.value = bpm);
@@ -183,13 +208,16 @@ const MetronomeModule = (() => {
     ).join('');
   }
 
+  // ── HTML builders ─────────────────────────────────────────────────────────
   function buildFullHTML() {
     const timeSigPills = TIME_SIGS.map(s =>
-      `<button class="pill${s === timeSig ? ' active' : ''}" data-timesig="${s}" onclick="MetronomeModule.setTimeSig('${s}')">${s}</button>`
+      `<button class="pill${s === timeSig ? ' active' : ''}" data-timesig="${s}"
+               onclick="MetronomeModule.setTimeSig('${s}')">${s}</button>`
     ).join('');
 
     const subPills = SUBDIVISIONS.map(s =>
-      `<button class="pill${s.id === subdivision ? ' active' : ''}" data-sub="${s.id}" onclick="MetronomeModule.setSubdivision('${s.id}')">${s.label}</button>`
+      `<button class="pill${s.id === subdivision ? ' active' : ''}" data-sub="${s.id}"
+               onclick="MetronomeModule.setSubdivision('${s.id}')">${s.label}</button>`
     ).join('');
 
     return `
@@ -197,8 +225,7 @@ const MetronomeModule = (() => {
         <div class="pendulum-wrap">
           <div class="pendulum-container">
             <div class="pendulum-pivot"></div>
-            <div class="pendulum-arm${isRunning ? ' swinging' : ''}"
-                 style="animation-duration:${getBeatDuration()}s">
+            <div class="pendulum-arm">
               <div class="pendulum-bob"></div>
             </div>
           </div>
@@ -234,8 +261,7 @@ const MetronomeModule = (() => {
     return `
       <div class="mini-metro-row">
         <div class="mini-pendulum-container">
-          <div class="mini-pendulum-arm${isRunning ? ' swinging' : ''}"
-               style="animation-duration:${getBeatDuration()}s">
+          <div class="mini-pendulum-arm">
             <div class="mini-pendulum-bob"></div>
           </div>
         </div>
@@ -247,13 +273,8 @@ const MetronomeModule = (() => {
       </div>`;
   }
 
-  function render(container) {
-    container.innerHTML = buildFullHTML();
-  }
-
-  function renderMini(container) {
-    container.innerHTML = buildMiniHTML();
-  }
+  function render(container)     { container.innerHTML = buildFullHTML(); }
+  function renderMini(container) { container.innerHTML = buildMiniHTML(); }
 
   return { render, renderMini, toggle, start, stop, setBPM, setTimeSig, setSubdivision, isRunning: () => isRunning };
 })();

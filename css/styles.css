@@ -451,14 +451,7 @@ button {
   transform: rotate(0deg);
 }
 
-.pendulum-arm.swinging {
-  animation: pendulumSwing 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes pendulumSwing {
-  from { transform: rotate(-30deg); }
-  to   { transform: rotate(30deg); }
-}
+/* pendulum motion is JS-driven via requestAnimationFrame — no CSS animation */
 
 .pendulum-bob {
   width: 16px;
@@ -746,9 +739,7 @@ button {
   margin-left: -1px;
 }
 
-.mini-pendulum-arm.swinging {
-  animation: pendulumSwing 0.6s ease-in-out infinite alternate;
-}
+/* mini pendulum also JS-driven */
 
 .mini-pendulum-bob {
   width: 10px;
