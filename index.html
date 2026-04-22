@@ -294,9 +294,10 @@
     <div class="screen-scroll">
       <ul class="strategy-list" id="coord-strategy-list"></ul>
     </div>
-    <div class="question" style="margin-top:1rem;">Did a strategy help?</div>
+    <div class="question" style="margin-top:0.75rem;">How is it going?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="goTo('screen-b4')">Yes — I can play it cleanly now</button>
+      <button class="btn-primary" onclick="goTo('screen-b4')">It's coming together — back to final coordination</button>
+      <button class="btn-secondary" onclick="recordIsolatedPassage()">Record for comparison</button>
       <button class="btn-secondary" onclick="goTo('screen-b3')">Still having issues — try targeted strategies</button>
     </div>
   </div>
@@ -325,12 +326,15 @@
       <p>Bring it up to tempo</p>
     </div>
     <div class="b-step-card">
-      <p class="b-step-text">Excellent work on the technical aspects! Now bring everything together at your target tempo. Play the passage and listen carefully.</p>
-      <p class="b-step-subtext" style="margin-top:0.5rem;">Record a take if you like, or just play and evaluate by ear.</p>
+      <p class="b-step-text">Now bring everything together at your target tempo. Play the passage and listen carefully.</p>
     </div>
-    <div class="question" style="margin-top:1rem;">How does it sound?</div>
+    <button class="btn-secondary" style="width:100%;margin-bottom:1rem;"
+            onclick="goTo('screen-b2-3-coord')">
+      → Open coordination strategies
+    </button>
+    <div class="question">How does it sound?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="restartPracticeLoop()">The issue is fixed — practice a new passage</button>
+      <button class="btn-primary" onclick="restartPracticeLoop()">Practice a new passage</button>
       <button class="btn-secondary" onclick="recordIsolatedPassage()">Record this passage for comparison</button>
       <button class="btn-secondary" onclick="goTo('screen-b2-1')">Still problems — return to isolation</button>
       <button class="btn-secondary" onclick="endSession()">End practice session</button>
