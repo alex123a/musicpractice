@@ -198,7 +198,7 @@ function onScreenEnter(screenId) {
 
     // Skip-to-eval button: only in isolated-passage sub-loop
     const skipBtn = document.getElementById('skip-to-eval-btn');
-    if (skipBtn) skipBtn.style.display = (state.mode === 'excerpt' && state.isIsolatedPassage) ? 'block' : 'none';
+    if (skipBtn) skipBtn.style.display = 'block';
 
     if (state.selectedFocus !== 'none') renderMiniPanel();
   }
@@ -1250,7 +1250,7 @@ function renderB3StrategyScreen(index, showStrategy) {
   const yesAction    = yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
   const noAction     = !yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
 
-  const videoHTML = buildB3VideoHTML(index);
+  const videoHTML = showStrategy ? buildB3VideoHTML(index) : '';
 
   const strategyHTML = showStrategy ? `
     <div class="b3-strategy-card">
