@@ -1247,8 +1247,9 @@ function renderB3StrategyScreen(index, showStrategy) {
   const stepLabel = `Question ${index + 1} of ${INTONATION_TREE.length} · ${item.screenTitle}`;
 
   const yesIsTrigger = item.trigger === 'yes';
-  const yesAction    = yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
-  const noAction     = !yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
+  // Split labels so skip is always top (grey), trigger always bottom (blue)
+  const skipLabel    = yesIsTrigger ? item.noLabel  : item.yesLabel;
+  const triggerLabel = yesIsTrigger ? item.yesLabel : item.noLabel;
 
   const videoHTML = showStrategy ? buildB3VideoHTML(index) : '';
 
@@ -1269,9 +1270,15 @@ function renderB3StrategyScreen(index, showStrategy) {
         Save for teacher discussion
       </button>
     </div>` : `
-    <div class="btn-group">
-      <button class="btn-primary"  onclick="${yesAction}">${item.yesLabel}</button>
-      <button class="btn-secondary" onclick="${noAction}">${item.noLabel}</button>
+    <div class="b3-answer-options">
+      <div class="b3-answer-block">
+        <p class="b3-answer-label">${skipLabel}</p>
+        <button class="btn-secondary" onclick="b3AnswerSkip(${index})">Next question →</button>
+      </div>
+      <div class="b3-answer-block">
+        <p class="b3-answer-label">${triggerLabel}</p>
+        <button class="btn-primary" onclick="b3AnswerTrigger(${index})">Show strategies</button>
+      </div>
     </div>`;
 
   container.innerHTML = `

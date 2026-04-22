@@ -2156,6 +2156,26 @@ button {
   max-width: 280px;
 }
 
+/* ── B3 answer option blocks ── */
+.b3-answer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.b3-answer-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.b3-answer-label {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  padding: 0 2px;
+}
+
 /* ── B3 video player ── */
 .b3-video-section {
   margin: 0.75rem 0;
