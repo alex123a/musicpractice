@@ -1037,9 +1037,15 @@ button {
 .strategy-list li.expanded { border-color: var(--color-border-secondary); }
 
 /* ── Admin panel ── */
-.admin-panel { display: flex; flex-direction: column; gap: 12px; }
+.admin-panel { display: flex; flex-direction: column; gap: 10px; }
 .admin-panel h2 { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
-.admin-panel p  { font-size: 12px; color: var(--color-text-secondary); }
+
+.admin-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
 
 .admin-form { display: flex; flex-direction: column; gap: 8px; }
 
@@ -1085,6 +1091,120 @@ button {
   letter-spacing: 0.05em;
   color: var(--color-text-secondary);
   margin-top: 4px;
+}
+
+/* ── Admin tabs ── */
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--color-background-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 3px;
+}
+
+.admin-tab {
+  flex: 1;
+  padding: 7px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.admin-tab.active {
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.admin-tab-body { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Admin: strategy video list ── */
+.admin-strategy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-strategy-item {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+}
+
+.admin-strategy-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.admin-video-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+
+.admin-video-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-background-secondary);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+.admin-video-url {
+  flex: 1;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-video-delete {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  background: var(--color-background-danger);
+  color: var(--color-text-danger);
+  border: 0.5px solid var(--color-border-danger);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-add-video-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.admin-add-video-row input {
+  flex: 1;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-family: monospace;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  outline: none;
+}
+
+.admin-add-video-row input:focus { border-color: var(--color-border-info); }
+
+.admin-add-video-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-align: center;
 }
 
 /* ── App footer ── */
@@ -2034,4 +2154,58 @@ button {
   color: var(--color-text-secondary);
   line-height: 1.6;
   max-width: 280px;
+}
+
+/* ── B3 video player ── */
+.b3-video-section {
+  margin: 0.75rem 0;
+}
+
+.b3-video-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+/* Tab strip — only shown when multiple videos */
+.b3-video-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.b3-video-tab {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 20px;
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.b3-video-tab.active {
+  background: var(--color-background-info);
+  border-color: var(--color-border-info);
+  color: var(--color-text-info);
+}
+
+/* The video element itself */
+.b3-video {
+  width: 100%;
+  border-radius: var(--border-radius-md);
+  background: #000;
+  display: block;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.b3-video-hidden {
+  display: none !important;
 }

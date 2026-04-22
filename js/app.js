@@ -1177,6 +1177,67 @@ const INTONATION_TREE = [
   },
 ];
 
+// ── B3 video helpers ───────────────────────────────────────────────────────
+function getB3Videos() {
+  try { return JSON.parse(localStorage.getItem('b3_strategy_videos') || '{}'); }
+  catch(e) { return {}; }
+}
+
+function buildB3VideoHTML(questionIndex) {
+  const allVideos = getB3Videos();
+  const videos    = (allVideos[String(questionIndex)] || []).filter(Boolean);
+  if (!videos.length) return '';
+
+  if (videos.length === 1) {
+    return `
+      <div class="b3-video-section">
+        <div class="b3-video-label">Video reference</div>
+        <video class="b3-video" controls playsinline preload="none"
+               src="${_esc(videos[0])}"></video>
+      </div>`;
+  }
+
+  const tabs = videos.map((_, i) =>
+    `<button class="b3-video-tab${i === 0 ? ' active' : ''}"
+             onclick="switchB3Video(${questionIndex}, ${i}, this)">
+       Video ${i + 1}
+     </button>`
+  ).join('');
+
+  const players = videos.map((url, i) =>
+    `<video class="b3-video${i > 0 ? ' b3-video-hidden' : ''}"
+            id="b3-vid-${questionIndex}-${i}"
+            controls playsinline preload="none"
+            src="${_esc(url)}"></video>`
+  ).join('');
+
+  return `
+    <div class="b3-video-section">
+      <div class="b3-video-label">Video reference</div>
+      <div class="b3-video-tabs">${tabs}</div>
+      ${players}
+    </div>`;
+}
+
+function switchB3Video(questionIndex, videoIndex, tabEl) {
+  const allVideos = getB3Videos();
+  const count     = (allVideos[String(questionIndex)] || []).length;
+  for (let i = 0; i < count; i++) {
+    const v = document.getElementById(`b3-vid-${questionIndex}-${i}`);
+    if (v) {
+      v.pause();
+      v.classList.toggle('b3-video-hidden', i !== videoIndex);
+    }
+  }
+  const tabsWrap = tabEl && tabEl.closest('.b3-video-tabs');
+  if (tabsWrap) {
+    tabsWrap.querySelectorAll('.b3-video-tab').forEach((btn, i) => {
+      btn.classList.toggle('active', i === videoIndex);
+    });
+  }
+}
+
+// ── B3 strategy screen renderer ────────────────────────────────────────────
 function renderB3StrategyScreen(index, showStrategy) {
   const container = document.getElementById('screen-b3-strategy-body');
   if (!container) return;
@@ -1185,46 +1246,43 @@ function renderB3StrategyScreen(index, showStrategy) {
   const isLast    = index === INTONATION_TREE.length - 1;
   const stepLabel = `Question ${index + 1} of ${INTONATION_TREE.length} · ${item.screenTitle}`;
 
-  // Determine which button is the "trigger" (shows strategy) and which is "skip"
   const yesIsTrigger = item.trigger === 'yes';
-  const yesAction    = yesIsTrigger
-    ? `b3AnswerTrigger(${index})`
-    : `b3AnswerSkip(${index})`;
-  const noAction     = !yesIsTrigger
-    ? `b3AnswerTrigger(${index})`
-    : `b3AnswerSkip(${index})`;
+  const yesAction    = yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
+  const noAction     = !yesIsTrigger ? `b3AnswerTrigger(${index})` : `b3AnswerSkip(${index})`;
 
-  let strategyHTML = '';
-  if (showStrategy) {
-    const nextLabel = isLast ? 'Finish strategy tree →' : 'Continue to next question →';
-    strategyHTML = `
-      <div class="b3-strategy-card">
-        <div class="b3-strategy-title">Strategy: ${item.strategy.title}</div>
-        <div class="b3-strategy-body">${item.strategy.body}</div>
-      </div>
-      <div class="btn-group">
-        <button class="btn-primary" onclick="${isLast ? 'goTo(\'screen-b4\')' : `renderB3StrategyScreen(${index + 1}, false)`}">
-          ${nextLabel}
-        </button>
-        <button class="btn-secondary btn-sm" style="text-align:center;" onclick="saveProblemForTeacher()">
-          Save for teacher discussion
-        </button>
-      </div>`;
-  }
+  const videoHTML = buildB3VideoHTML(index);
+
+  const strategyHTML = showStrategy ? `
+    <div class="b3-strategy-card">
+      <div class="b3-strategy-title">Strategy: ${item.strategy.title}</div>
+      <div class="b3-strategy-body">${item.strategy.body}</div>
+    </div>` : '';
+
+  const buttonsHTML = showStrategy ? `
+    <div class="btn-group">
+      <button class="btn-primary"
+              onclick="${isLast ? `goTo('screen-b4')` : `renderB3StrategyScreen(${index + 1}, false)`}">
+        ${isLast ? 'Finish strategy tree →' : 'Continue to next question →'}
+      </button>
+      <button class="btn-secondary btn-sm" style="text-align:center;"
+              onclick="saveProblemForTeacher()">
+        Save for teacher discussion
+      </button>
+    </div>` : `
+    <div class="btn-group">
+      <button class="btn-primary"  onclick="${yesAction}">${item.yesLabel}</button>
+      <button class="btn-secondary" onclick="${noAction}">${item.noLabel}</button>
+    </div>`;
 
   container.innerHTML = `
     <div class="b3-step-indicator">${stepLabel}</div>
     <div class="b3-question-card">
       <p class="b3-question-text">${item.question}</p>
     </div>
-    ${!showStrategy ? `
-    <div class="btn-group">
-      <button class="btn-primary" onclick="${yesAction}">${item.yesLabel}</button>
-      <button class="btn-secondary" onclick="${noAction}">${item.noLabel}</button>
-    </div>` : ''}
-    ${strategyHTML}`;
+    ${strategyHTML}
+    ${videoHTML}
+    ${buttonsHTML}`;
 
-  // Keep questionIndex in sync
   state.loopB.questionIndex = index;
   state.loopB.showStrategy  = showStrategy;
 }
