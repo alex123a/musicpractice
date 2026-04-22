@@ -138,5 +138,24 @@ const DB = (() => {
     }));
   }
 
-  return { open, saveSession, getSessionsForPiece, getAllSessions, getAudio, deleteSession, markTagPracticed, setTagPracticed, updateSessionTags };
+  // Append a problem note to a session's problemNotes array
+  function addProblemNote(sessionId, note) {
+    return open().then(db => new Promise((resolve, reject) => {
+      const t     = db.transaction('sessions', 'readwrite');
+      const store = t.objectStore('sessions');
+      const req   = store.get(sessionId);
+      req.onsuccess = () => {
+        const session = req.result;
+        if (!session) return reject(new Error('Session not found'));
+        if (!session.problemNotes) session.problemNotes = [];
+        session.problemNotes.push(note);
+        const upd = store.put(session);
+        upd.onsuccess = () => resolve();
+        upd.onerror   = () => reject(upd.error);
+      };
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  return { open, saveSession, getSessionsForPiece, getAllSessions, getAudio, deleteSession, markTagPracticed, setTagPracticed, updateSessionTags, addProblemNote };
 })();

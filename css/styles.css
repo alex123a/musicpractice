@@ -1865,3 +1865,173 @@ button {
   color: var(--color-text-secondary);
   text-align: center;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LOOP B — Problem Solving Styles
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Informational step card ── */
+.b-step-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.b-step-text {
+  font-size: 15px;
+  color: var(--color-text-primary);
+  line-height: 1.65;
+}
+
+.b-step-subtext {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Tip box ── */
+.b-tip {
+  background: var(--color-background-warning);
+  border: 0.5px solid var(--color-border-warning);
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  color: var(--color-text-warning);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* ── B2-2 textarea ── */
+.b2-textarea {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  margin-bottom: 0.75rem;
+  outline: none;
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+
+.b2-textarea:focus          { border-color: var(--color-border-info); }
+.b2-textarea::placeholder   { color: var(--color-text-secondary); }
+
+/* ── B2-2 compact recording player ── */
+.b2-player {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.b2-player-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.b2-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── B3 question card ── */
+.b3-step-indicator {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.6rem;
+}
+
+.b3-question-card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.b3-question-text {
+  font-size: 15px;
+  color: var(--color-text-primary);
+  line-height: 1.65;
+}
+
+/* ── B3 strategy reveal card ── */
+.b3-strategy-card {
+  background: var(--color-background-info);
+  border: 0.5px solid var(--color-border-info);
+  border-radius: var(--border-radius-lg);
+  padding: 1rem 1.1rem;
+  margin: 0.25rem 0 1rem;
+}
+
+.b3-strategy-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-info);
+  margin-bottom: 0.6rem;
+}
+
+.b3-strategy-body {
+  font-size: 13px;
+  color: var(--color-text-info);
+  line-height: 1.6;
+}
+
+.b3-strategy-body ol,
+.b3-strategy-body ul   { color: var(--color-text-info); }
+.b3-strategy-body strong { color: var(--color-text-info); }
+
+.b3-strategy-why {
+  margin-top: 0.75rem;
+  font-size: 12px;
+  color: var(--color-text-info);
+  opacity: 0.8;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── Coming soon placeholder (rhythm tree) ── */
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem 1.5rem;
+}
+
+.coming-soon-icon {
+  font-size: 52px;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.coming-soon-title {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.coming-soon-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 280px;
+}
