@@ -472,10 +472,13 @@ button {
   background: var(--color-text-secondary);
   opacity: 0.18;
   top: 62px;
+  transition: opacity 0.05s;  /* Match beat dot transition timing */
 }
 
 .pendulum-wall-left  { left: 8px; }
 .pendulum-wall-right { right: 8px; }
+
+.pendulum-wall.active { opacity: 0.6; }  /* Darken when wall is hit */
 
 .pendulum-bob {
   width: 16px;

@@ -22,7 +22,7 @@ const MetronomeModule = (() => {
   // Pendulum state
   let _pendulumRAF   = null;
   let _firstBeatTime = null;
-  const _MAX_ANGLE   = 15;  // ±15° creates ~21px displacement; bob contacts inner part of walls
+  const _MAX_ANGLE   = 29;  // ±29° creates ~38px displacement; bob (8px radius) touches inner wall at 8px
 
   const LOOKAHEAD_MS   = 25;
   const SCHEDULE_AHEAD = 0.1;
@@ -111,10 +111,10 @@ const MetronomeModule = (() => {
     // sin(π×phase − π/2) starts at −MAX_ANGLE (left) at phase=0, so even beats → left wall
     const side = beatIndex % 2 === 0 ? 'left' : 'right';
     document.querySelectorAll(`.pendulum-wall-${side}`).forEach(wall => {
-      wall.animate(
-        [{ opacity: 0.18 }, { opacity: 0.6, offset: 0.1 }, { opacity: 0.18 }],
-        { duration: 500, easing: 'ease-out' }
-      );
+      // Add active class to darken wall (matched with beat dot timing: 0.05s transition)
+      wall.classList.add('active');
+      // Remove active class after brief moment so it fades back
+      setTimeout(() => wall.classList.remove('active'), 150);
     });
   }
 
