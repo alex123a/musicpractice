@@ -22,7 +22,7 @@ const MetronomeModule = (() => {
   // Pendulum state
   let _pendulumRAF   = null;
   let _firstBeatTime = null;
-  const _MAX_ANGLE   = 30;
+  const _MAX_ANGLE   = 15;  // ±15° creates ~21px displacement; walls at 8px safely collides
 
   const LOOKAHEAD_MS   = 25;
   const SCHEDULE_AHEAD = 0.1;
@@ -102,15 +102,14 @@ const MetronomeModule = (() => {
 
   // ── Wall flash ────────────────────────────────────────────────────────────
   // Called at the exact moment of each beat click; flashes the wall the bob
-  // is hitting. Parity is derived from how many beats have elapsed since start,
-  // which matches the cos() phase used to drive the pendulum arm.
+  // is hitting. Side matches the pendulum position: even beats → right, odd beats → left.
   function _flashWallForBeat(beatTime) {
     if (_firstBeatTime === null) return;
     const elapsed   = beatTime - _firstBeatTime;
     const beatDur   = getBeatDuration();
     const beatIndex = Math.round(elapsed / beatDur);
-    // Even beats → right extreme (+angle); odd beats → left extreme (−angle)
-    const side = ((beatIndex % 2) + 2) % 2 === 0 ? 'right' : 'left';
+    // Even beats: pendulum at +angle (right wall); odd beats: pendulum at -angle (left wall)
+    const side = beatIndex % 2 === 0 ? 'right' : 'left';
     document.querySelectorAll(`.pendulum-wall-${side}`).forEach(wall => {
       wall.animate(
         [{ opacity: 0.18 }, { opacity: 0.85, offset: 0.1 }, { opacity: 0.18 }],
@@ -131,7 +130,9 @@ const MetronomeModule = (() => {
     const t       = audioCtx.currentTime;
     const beatDur = getBeatDuration();
     const phase   = (t - _firstBeatTime) / beatDur;
-    const angle   = _MAX_ANGLE * Math.cos(Math.PI * phase);
+    // Use sine instead of cosine for smoother deceleration at endpoints (realistic pendulum physics)
+    // sin(π*phase - π/2) = -cos(π*phase), but starts/ends with slower velocities
+    const angle   = _MAX_ANGLE * Math.sin(Math.PI * phase - Math.PI / 2);
     document.querySelectorAll('.pendulum-arm, .mini-pendulum-arm').forEach(arm => {
       arm.style.transform = `rotate(${angle}deg)`;
     });
