@@ -186,7 +186,10 @@ function onScreenEnter(screenId) {
     const miniRefPanel = document.querySelector('.mini-ref-panel');
     if (miniRefPanel) {
       miniRefPanel.style.display = state.selectedFocus === 'none' ? 'none' : '';
-      if (state.selectedFocus !== 'none') miniRefPanel.open = true;
+      if (state.selectedFocus !== 'none') {
+        // Collapse drone/metronome by default on comparison recording screen to reduce distraction
+        miniRefPanel.open = state.isIsolatedPassage ? false : true;
+      }
     }
 
     // Note picker: only for pitch focus
@@ -264,6 +267,10 @@ function onScreenEnter(screenId) {
 
   if (screenId === 'screen-b3') {
     renderB3();
+  }
+
+  if (screenId === 'screen-comparison') {
+    renderComparisonScreen();
   }
 
   if (screenId === 'screen7') {
@@ -397,6 +404,14 @@ function recordIsolatedPassage() {
 
 function skipToEvaluation() {
   goTo('screen5');
+}
+
+function analyzeRecording() {
+  if (state.isIsolatedPassage) {
+    goTo('screen-comparison');
+  } else {
+    goTo('screen5');
+  }
 }
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
@@ -925,41 +940,55 @@ function _saveProblemToSession() {
 // ── B2-3-coord: Coordination strategies ────────────────────────────────────
 const COORD_STRATEGIES = [
   {
+    category: 'Tempo/Speed',
     title : 'Gradual Metronome Increase',
     intro : 'Build speed step by step with the metronome',
     detail: 'Start at the tempo where you can play the passage cleanly 2–3 times in a row. Then increase by 4–5 BPM and repeat. Only move up when the passage is clean, not just playable. Continue until you reach your target tempo.',
   },
   {
+    category: 'Pattern Work',
     title : 'Rhythmic Pattern Variations',
     intro : 'Use dotted or reversed rhythms to break habit patterns',
     detail: 'Play the passage with exaggerated dotted rhythms (long-short), then reversed (short-long). This disrupts automatic muscle memory and forces you to focus on each note individually. Great for passages where your hands "run away."',
   },
   {
+    category: 'Pattern Work',
     title : 'Reduce and Add Notes',
     intro : 'Play a skeleton version, then gradually add notes back',
     detail: 'Play only the first note of each beat (or group), leaving the rest silent. Once that is clean, add the next note, and so on. This simplifies the technical demand and lets you build coordination one piece at a time.',
   },
   {
+    category: 'Tempo/Speed',
     title : 'Anchor Notes and Stopping Points',
     intro : 'Define checkpoints and play between them',
     detail: 'Choose 2–3 "anchor" notes in the passage (stable notes where you can pause and reset). Practice playing cleanly from anchor to anchor. This breaks the passage into manageable segments and prevents rushing through problem spots.',
   },
   {
+    category: 'Pattern Work',
     title : 'Note Grouping',
     intro : 'Organize notes into musical groups and practice by group',
     detail: 'Identify the natural musical groupings (e.g. by bow direction, beat, or phrase). Play each group as a unit, stopping between groups. This creates structure that aids both memory and coordination.',
   },
   {
+    category: 'Articulation/Touch',
     title : 'Articulation Variations',
     intro : 'Change the articulation to expose the coordination problem',
     detail: 'Play the passage legato (smooth), then staccato (short and bouncy), then portato (separated but connected). Also try variable legato: 2-note groups, then 3-note groups. Different articulations change the muscle pattern and often reveal where coordination breaks down.',
   },
   {
+    category: 'Hand Coordination',
     title : 'Left Hand Only (Silent Fingering)',
     intro : 'Finger the passage without the bow to isolate left-hand coordination',
     detail: 'Lay the bow aside and finger the passage silently (or very lightly on the string). Focus entirely on left-hand accuracy, timing, and relaxation. This removes bow coordination as a variable and lets you feel where the left hand is struggling.',
   },
   {
+    category: 'Hand Coordination',
+    title : 'Right Hand (Bow) Only',
+    intro : 'Play with bow alone, focusing on bow changes and articulation',
+    detail: 'Lay your left hand down or away from the violin completely. With the bow on the strings, practice the exact bowing pattern of the problem passage without the left-hand coordination. Be very clear where each string change happens and where the bow direction changes (up-bow vs. down-bow). Once bow coordination feels secure, slowly re-introduce the left hand.',
+  },
+  {
+    category: 'Articulation/Touch',
     title : 'Pizzicato',
     intro : 'Pluck the strings to remove bow coordination',
     detail: 'Play the passage pizzicato (plucked). This removes all bow technique from the equation. If the passage feels easier or cleaner pizzicato, the bow is the coordination problem. If it is still difficult, focus shifts to the left hand.',
@@ -969,12 +998,164 @@ const COORD_STRATEGIES = [
 function renderCoordStrategies() {
   const list = document.getElementById('coord-strategy-list');
   if (!list) return;
-  list.innerHTML = COORD_STRATEGIES.map(s => `
-    <li onclick="toggleStrategy(this)">
-      <strong>${s.title}</strong>
-      <p>${s.intro}</p>
-      <div class="strategy-detail">${s.detail}</div>
-    </li>`).join('');
+
+  const categories = {
+    'Tempo/Speed': [],
+    'Hand Coordination': [],
+    'Articulation/Touch': [],
+    'Pattern Work': []
+  };
+
+  // Group strategies by category
+  COORD_STRATEGIES.forEach(s => {
+    if (categories[s.category]) {
+      categories[s.category].push(s);
+    }
+  });
+
+  // Render with category headers
+  let html = '';
+  Object.entries(categories).forEach(([cat, strategies]) => {
+    if (strategies.length > 0) {
+      html += `<div class="strategy-group-header">${cat}</div>`;
+      strategies.forEach(s => {
+        html += `<li onclick="toggleStrategy(this)">
+          <strong>${s.title}</strong>
+          <p>${s.intro}</p>
+          <div class="strategy-detail">${s.detail}</div>
+        </li>`;
+      });
+    }
+  });
+
+  list.innerHTML = html;
+}
+
+// ── Comparison screen functions ─────────────────────────────────────────────
+function renderComparisonScreen() {
+  // Load initial recording (from saved session)
+  if (!state.savedSessionId) return;
+
+  DB.getAudio(state.savedSessionId).then(audioBlob => {
+    if (audioBlob) {
+      const initialUrl = URL.createObjectURL(audioBlob);
+      renderComparisonPlayer('comparison-initial-player', initialUrl);
+    }
+  }).catch(console.error);
+
+  if (state.recordedAudioURL) {
+    renderComparisonPlayer('comparison-current-player', state.recordedAudioURL);
+  }
+}
+
+function renderComparisonPlayer(elementId, audioURL) {
+  const container = document.getElementById(elementId);
+  if (!container || !audioURL) return;
+
+  // Create audio element to get duration
+  const audio = new Audio(audioURL);
+  let duration = 0;
+
+  // Update duration when metadata loads
+  audio.onloadedmetadata = () => {
+    duration = audio.duration;
+    updateComparisonTime(elementId);
+  };
+
+  container.innerHTML = `
+    <div class="s5-player-controls">
+      <button class="s5-play-btn" onclick="toggleComparisonPlayback('${elementId}')">▶</button>
+      <div class="s5-progress-wrap" onclick="seekComparisonPlayback('${elementId}', event)">
+        <div class="s5-progress-bar">
+          <div class="s5-progress-fill" id="${elementId}-fill"></div>
+        </div>
+      </div>
+      <span class="s5-playback-time" id="${elementId}-time">0:00 / 0:00</span>
+    </div>
+  `;
+
+  // Store reference for playback control
+  window[elementId + '_audio'] = audio;
+}
+
+function updateComparisonTime(elementId) {
+  const audio = window[elementId + '_audio'];
+  if (!audio) return;
+  const timeEl = document.getElementById(elementId + '-time');
+  if (timeEl) {
+    const mins = Math.floor(audio.currentTime / 60);
+    const secs = Math.floor(audio.currentTime % 60);
+    const durMins = Math.floor(audio.duration / 60);
+    const durSecs = Math.floor(audio.duration % 60);
+    timeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} / ${durMins}:${durSecs.toString().padStart(2, '0')}`;
+  }
+}
+
+function toggleComparisonPlayback(elementId) {
+  const audio = window[elementId + '_audio'];
+  if (!audio) return;
+
+  const btn = event.target.closest('.s5-play-btn');
+  if (audio.paused) {
+    audio.play();
+    btn.textContent = '⏸';
+    updateComparisonProgress(elementId);
+  } else {
+    audio.pause();
+    btn.textContent = '▶';
+  }
+}
+
+function updateComparisonProgress(elementId) {
+  const audio = window[elementId + '_audio'];
+  if (!audio) return;
+
+  const fill = document.getElementById(elementId + '-fill');
+  if (!fill) return;
+
+  // Set up interval to update progress
+  const updateProgress = () => {
+    if (audio.paused) return;
+    const percent = (audio.currentTime / audio.duration) * 100;
+    fill.style.width = percent + '%';
+    updateComparisonTime(elementId);
+    requestAnimationFrame(updateProgress);
+  };
+
+  updateProgress();
+}
+
+function seekComparisonPlayback(elementId, e) {
+  const audio = window[elementId + '_audio'];
+  if (!audio) return;
+  const wrap = e.currentTarget;
+  const rect = wrap.getBoundingClientRect();
+  const percent = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = percent * audio.duration;
+}
+
+function showStrategyChoice() {
+  const modal = document.getElementById('strategy-choice-modal');
+  if (modal) modal.style.display = 'block';
+}
+
+function goToIntonationStrategies() {
+  state.loopB.questionIndex = 0;
+  state.loopB.showStrategy = false;
+  goTo('screen-b3-strategy');
+  renderB3StrategyScreen(0, false);
+}
+
+function goToCoordStrategies() {
+  goTo('screen-b2-3-coord');
+}
+
+function saveComparisonForTeacher() {
+  // Append problem note to session
+  _saveProblemToSession();
+  // Flag for teacher
+  state.loopB.teacherReview = true;
+  alert('Saved for teacher discussion.');
 }
 
 // ── B3: Focus confirmation ──────────────────────────────────────────────────
@@ -1048,7 +1229,7 @@ function renderB3ComingSoon() {
 const INTONATION_TREE = [
   {
     screenTitle: 'Understanding Intervals',
-    question   : 'Do you understand exactly what intervals are between each note in this section, and how they should sound?',
+    question   : 'Do you understand exactly what intervals (distances between notes) are between each note in this section, and how they should sound?',
     yesLabel   : 'Yes, I understand them clearly',
     noLabel    : 'No, not completely',
     trigger    : 'no',
@@ -1101,27 +1282,35 @@ const INTONATION_TREE = [
     strategy: {
       title: 'Hit the Note Directly',
       body : `<p>You already have a good ear: you can detect errors and correct them. Now train your muscles to land on the correct pitch from the start.</p>
-        <p style="margin-top:0.5rem;"><strong>The exercise:</strong></p>
-        <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
-          <li>Play a note in the problem section</li>
-          <li>Stop immediately and do <em>not</em> correct it</li>
-          <li>Ask: was it too sharp, too flat, or correct?</li>
+        <p style="margin-top:0.5rem;"><strong>Choose one approach:</strong></p>
+        <p><strong>Option A: Hit the note out of nowhere</strong></p>
+        <ol style="margin:0.3rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
+          <li>Release your left arm completely from the violin</li>
+          <li>Play a single target note from memory</li>
+          <li>Ask yourself: was it too sharp, too flat, or correct?</li>
           <li>Reset your hand and try again, aiming slightly differently</li>
-          <li>Repeat until you land correctly several times in a row</li>
-          <li>Move through the passage note by note</li>
+          <li>Repeat 5–10 times until you land correctly several times</li>
         </ol>
-        <p class="b3-strategy-why">If you always correct after playing, your muscles learn the wrong movement as "normal." This exercise teaches your body to find the right position on the very first contact.</p>`,
+        <p style="margin-top:0.5rem;"><strong>Option B: Hit the note in context</strong></p>
+        <ol style="margin:0.3rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
+          <li>Play the notes leading up to your target note</li>
+          <li>When you reach the target note, do NOT correct it</li>
+          <li>Evaluate: was it too sharp, too flat, or correct?</li>
+          <li>Pause, reset, and play the approach + target note again</li>
+          <li>Repeat until you land correctly several times</li>
+        </ol>
+        <p class="b3-strategy-why">Both approaches train your muscles to find the right position on the very first contact, rather than relying on correction afterward.</p>`,
     },
   },
   {
-    screenTitle: 'Mental Preparation',
-    question   : 'Do you imagine the sound and feeling of each note in your mind before you play it?',
-    yesLabel   : 'Yes, I anticipate each note',
-    noLabel    : 'No, I just play',
-    trigger    : 'no',
+    screenTitle: 'Consistency Challenge',
+    question   : 'After practicing intonation, are you unsure whether you will hit the notes correctly again next time you play?',
+    yesLabel   : 'Yes, I worry about consistency',
+    noLabel    : 'No, I feel confident repeating it',
+    trigger    : 'yes',
     strategy: {
       title: 'Develop Internal Anticipation',
-      body : `<p>Playing without imagining first makes it nearly impossible to predict and prevent intonation errors.</p>
+      body : `<p>Having a clear mental image before you play helps create muscle memory and consistency.</p>
         <p style="margin-top:0.5rem;"><strong>The exercise:</strong></p>
         <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
           <li>Set a very slow tempo, about half your normal speed</li>
@@ -1131,7 +1320,7 @@ const INTONATION_TREE = [
           <li>Compare: did it match what you imagined?</li>
           <li>Adjust and move to the next note</li>
         </ol>
-        <p class="b3-strategy-why">When you imagine first, you'll recognize immediately if something sounds different. Anticipation becomes your early-warning system for intonation errors.</p>`,
+        <p class="b3-strategy-why">When you imagine first, your body builds a consistent map. Anticipation becomes your anchor for reliable repetition.</p>`,
     },
   },
   {
@@ -1152,7 +1341,7 @@ const INTONATION_TREE = [
           <li>Play the exaggerated version 3–5 times</li>
           <li>Return to the correct pitch; it now feels easier to find</li>
         </ol>
-        <p class="b3-strategy-why">Exaggeration expands what your body believes it can do. After hitting an extreme, the correct pitch feels like the comfortable middle, much more accessible.</p>`,
+        <p class="b3-strategy-why">Exaggeration expands what your body believes it can do. After hitting an extreme, the correct pitch might feel like the comfortable middle, much more accessible.</p>`,
     },
   },
   {
@@ -1168,7 +1357,7 @@ const INTONATION_TREE = [
           <li><strong>Feet &amp; legs:</strong> balanced, grounded, knees not locked</li>
           <li><strong>Back &amp; spine:</strong> upright, centered, not rigid</li>
           <li><strong>Shoulders:</strong> relaxed, not raised toward the ears</li>
-          <li><strong>Right elbow:</strong> hanging with gravity, not tense or locked</li>
+          <li><strong>Left elbow:</strong> hanging with gravity, not tense or locked</li>
           <li><strong>Left wrist:</strong> relaxed, flexes naturally while playing</li>
           <li><strong>Left thumb &amp; fingers:</strong> soft contact, not gripping the neck</li>
         </ul>

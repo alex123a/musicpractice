@@ -22,7 +22,7 @@ const MetronomeModule = (() => {
   // Pendulum state
   let _pendulumRAF   = null;
   let _firstBeatTime = null;
-  const _MAX_ANGLE   = 15;  // ±15° creates ~21px displacement; walls at 8px safely collides
+  const _MAX_ANGLE   = 25;  // ±25° creates ~34px displacement; bob (8px radius) reaches walls at 8px/92px
 
   const LOOKAHEAD_MS   = 25;
   const SCHEDULE_AHEAD = 0.1;
@@ -108,8 +108,8 @@ const MetronomeModule = (() => {
     const elapsed   = beatTime - _firstBeatTime;
     const beatDur   = getBeatDuration();
     const beatIndex = Math.round(elapsed / beatDur);
-    // Even beats: pendulum at +angle (right wall); odd beats: pendulum at -angle (left wall)
-    const side = beatIndex % 2 === 0 ? 'right' : 'left';
+    // sin(π×phase − π/2) starts at −MAX_ANGLE (left) at phase=0, so even beats → left wall
+    const side = beatIndex % 2 === 0 ? 'left' : 'right';
     document.querySelectorAll(`.pendulum-wall-${side}`).forEach(wall => {
       wall.animate(
         [{ opacity: 0.18 }, { opacity: 0.85, offset: 0.1 }, { opacity: 0.18 }],

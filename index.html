@@ -141,7 +141,7 @@
     </div>
 
     <button class="btn-primary" id="analyzeBtn" style="width:100%; display:none;"
-            onclick="goTo('screen5')">
+            onclick="analyzeRecording()">
       Analyze recording
     </button>
   </div>
@@ -331,16 +331,65 @@
     <div class="b-step-card">
       <p class="b-step-text">Now bring everything together at your target tempo. Play the passage and listen carefully.</p>
     </div>
-    <button class="btn-secondary" style="width:100%;margin-bottom:1rem;"
-            onclick="goTo('screen-b2-3-coord')">
-      → Open coordination strategies
+
+    <!-- Step 1: Record for comparison -->
+    <div class="question" style="margin-bottom:0.5rem;">First, let's record this passage:</div>
+    <button class="btn-primary" style="width:100%; margin-bottom:1rem;" onclick="recordIsolatedPassage()">
+      Record this passage for comparison
     </button>
-    <div class="question">How does it sound?</div>
+
+    <!-- Step 2: Additional help -->
+    <div style="margin:1.5rem 0; padding:1rem; background:var(--color-background-tertiary); border-radius:8px;">
+      <div class="question" style="margin-bottom:0.5rem;">Need more help?</div>
+      <button class="btn-secondary" style="width:100%;" onclick="goTo('screen-b2-3-coord')">
+        → Open coordination strategies
+      </button>
+    </div>
+
+    <!-- Step 3: Final evaluation -->
+    <div class="question" style="margin-top:1.5rem;">How does it sound?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="restartPracticeLoop()">Practice a new passage</button>
-      <button class="btn-secondary" onclick="recordIsolatedPassage()">Record this passage for comparison</button>
-      <button class="btn-secondary" onclick="goTo('screen-b2-1')">Still having problems; return to isolation</button>
-      <button class="btn-secondary" onclick="endSession()">End practice session</button>
+      <button class="btn-primary" onclick="restartPracticeLoop()">Better, continue to next section →</button>
+      <button class="btn-secondary" onclick="goTo('screen-b2-1')">Still problems, return to isolation</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Comparison evaluation ──────────────────────────────────── -->
+  <div id="screen-comparison" class="screen">
+    <button class="back-btn" onclick="goTo('screen-b4')">← Back</button>
+    <div class="header">
+      <h1>Compare Your Progress</h1>
+      <p>Initial vs. After Strategies</p>
+    </div>
+
+    <!-- Initial Recording Player -->
+    <div class="comparison-player-container">
+      <div class="comparison-label">Initial Recording</div>
+      <div id="comparison-initial-player" class="s5-player"></div>
+    </div>
+
+    <!-- New Recording Player -->
+    <div class="comparison-player-container">
+      <div class="comparison-label">Current Recording</div>
+      <div id="comparison-current-player" class="s5-player"></div>
+    </div>
+
+    <!-- Evaluation Question -->
+    <div class="question" style="margin-top:1.5rem;">Did the passage improve?</div>
+    <div class="btn-group">
+      <button class="btn-secondary" onclick="saveComparisonForTeacher()">Save for teacher discussion</button>
+      <button class="btn-primary" onclick="goTo('screen2')">Yes, practice next section →</button>
+      <button class="btn-secondary" onclick="showStrategyChoice()">No, return to strategies</button>
+      <button class="btn-secondary" onclick="endSession()">End session</button>
+    </div>
+
+    <!-- Strategy Choice (initially hidden) -->
+    <div id="strategy-choice-modal" style="display:none; margin-top:1rem;">
+      <div class="question">Which strategies would help?</div>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="goToIntonationStrategies()">Intonation strategies</button>
+        <button class="btn-secondary" onclick="goToCoordStrategies()">Coordination strategies</button>
+      </div>
     </div>
   </div>
 
