@@ -1,44 +1,47 @@
 :root {
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f9f9f9;
-  --color-background-tertiary: #f1f1f1;
-  --color-background-info: #E6F1FB;
+  /* Brand: Terracotta-Warm palette */
+  --color-terracotta:  #C96952;
+  --color-coral:       #E8927C;
+  --color-coral-light: #F0C9B8;
+  --color-teal:        #4A7C8F;
+  --color-teal-deep:   #2C5F6F;
+  --color-cream:       #FCF8F5;
+  --color-cream-light: #FBF7F5;
+  --color-warm-gray:   #B8B4AF;
+  --color-charcoal:    #2D3436;
+  --color-medium-gray: #5F5C58;
+
+  /* Semantic backgrounds */
+  --color-background-primary:   #FCF8F5;
+  --color-background-secondary: #FBF7F5;
+  --color-background-tertiary:  #F0EBE5;
+
+  /* "Info" remapped to terracotta (selected states, banners, CTAs) */
+  --color-background-info: #FCF2ED;
+  --color-text-info:       #C96952;
+  --color-border-info:     #E8927C;
+
+  /* Danger */
   --color-background-danger: #FCEBEB;
+  --color-text-danger:       #A32D2D;
+  --color-border-danger:     #F09595;
+
+  /* Warning */
   --color-background-warning: #FAEEDA;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #666666;
-  --color-text-info: #185FA5;
-  --color-text-danger: #A32D2D;
-  --color-text-warning: #854F0B;
-  --color-border-tertiary: rgba(0, 0, 0, 0.15);
-  --color-border-secondary: rgba(0, 0, 0, 0.3);
-  --color-border-info: #85B7EB;
-  --color-border-danger: #F09595;
-  --color-border-warning: #FAC775;
+  --color-text-warning:       #854F0B;
+  --color-border-warning:     #FAC775;
+
+  --color-text-primary:   #2D3436;
+  --color-text-secondary: #5F5C58;
+  --color-border-tertiary:  rgba(184, 180, 175, 0.4);
+  --color-border-secondary: #B8B4AF;
+
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-primary: #2a2a2a;
-    --color-background-secondary: #1f1f1f;
-    --color-background-tertiary: #151515;
-    --color-background-info: #0C447C;
-    --color-background-danger: #791F1F;
-    --color-background-warning: #633806;
-    --color-text-primary: #e8e8e8;
-    --color-text-secondary: #a0a0a0;
-    --color-text-info: #B5D4F4;
-    --color-text-danger: #F7C1C1;
-    --color-text-warning: #FAC775;
-    --color-border-tertiary: rgba(255, 255, 255, 0.15);
-    --color-border-secondary: rgba(255, 255, 255, 0.3);
-    --color-border-info: #378ADD;
-    --color-border-danger: #E24B4A;
-    --color-border-warning: #EF9F27;
-  }
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    'SF Mono', 'Roboto Mono', monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -91,7 +94,8 @@ body {
 
 .header h1 {
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-display);
   color: var(--color-text-primary);
   margin-bottom: 0.25rem;
 }
@@ -112,9 +116,9 @@ body {
 
 .progress-fill {
   height: 100%;
-  background: var(--color-background-info);
+  background: var(--color-terracotta);
   border: none;
-  transition: width 0.3s;
+  transition: width 0.4s ease-out;
 }
 
 /* ── Typography ── */
@@ -144,21 +148,26 @@ button {
 }
 
 .btn-secondary {
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-cream-light);
+  color: var(--color-terracotta);
+  border: 0.5px solid var(--color-coral);
 }
 
-.btn-secondary:hover { background: var(--color-background-tertiary); }
+.btn-secondary:hover {
+  background: var(--color-cream);
+  border-color: var(--color-terracotta);
+}
 
 .btn-primary {
-  background: var(--color-background-info);
-  color: var(--color-text-info);
-  border: 0.5px solid var(--color-border-info);
+  background: var(--color-terracotta);
+  color: var(--color-cream);
+  border: none;
   text-align: center;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
-.btn-primary:hover { filter: brightness(0.95); }
+.btn-primary:hover { background: var(--color-coral); }
 .btn-secondary:active, .btn-primary:active { transform: scale(0.98); }
 
 .btn-sm {
@@ -175,16 +184,17 @@ button {
 .back-btn {
   padding: 7px 12px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-medium-gray);
   background: transparent;
-  border: 0.5px solid var(--color-border-tertiary);
+  border: none;
   border-radius: var(--border-radius-md);
   cursor: pointer;
   margin-bottom: 1rem;
   display: inline-block;
+  font-weight: 500;
 }
 
-.back-btn:hover { background: var(--color-background-tertiary); }
+.back-btn:hover { color: var(--color-charcoal); background: var(--color-background-tertiary); }
 
 /* ── Text input (landing) ── */
 .text-input {
@@ -354,7 +364,7 @@ button {
 
 .a-standard-row input[type="range"] {
   flex: 1;
-  accent-color: var(--color-text-info);
+  accent-color: var(--color-terracotta);
   height: 4px;
   border: none;
   padding: 0;
@@ -492,7 +502,7 @@ button {
 }
 
 .beat-dot.accent { background: var(--color-text-danger); transform: scale(1.3); }
-.beat-dot.active { background: var(--color-text-info); }
+.beat-dot.active { background: var(--color-terracotta); }
 
 .metro-bpm-row {
   display: flex;
@@ -502,7 +512,7 @@ button {
 
 .metro-bpm-row input[type="range"] {
   flex: 1;
-  accent-color: var(--color-text-info);
+  accent-color: var(--color-terracotta);
   height: 4px;
   border: none;
   padding: 0;
@@ -824,11 +834,11 @@ button {
 }
 
 .rec-icon:hover { transform: scale(1.05); }
-.rec-icon.recording { animation: pulse 1.5s infinite; }
+.rec-icon.recording { animation: recordingPulse 1.2s ease-in-out infinite; }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+@keyframes recordingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 105, 82, 0.5); }
+  50%       { box-shadow: 0 0 0 14px rgba(201, 105, 82, 0); }
 }
 
 .rec-icon-inner {
@@ -865,7 +875,7 @@ button {
 
 .waveform-bar {
   width: 4px;
-  background: var(--color-border-info);
+  background: var(--color-terracotta);
   border-radius: 2px;
   transition: height 0.1s;
 }
@@ -931,9 +941,9 @@ button {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-background-info);
-  color: var(--color-text-info);
-  border: 0.5px solid var(--color-border-info);
+  background: var(--color-terracotta);
+  color: var(--color-cream);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -945,7 +955,7 @@ button {
   transition: filter 0.15s;
 }
 
-.s5-play-btn:hover { filter: brightness(0.9); }
+.s5-play-btn:hover { filter: brightness(0.88); }
 
 .s5-progress-wrap {
   flex: 1;
@@ -962,7 +972,7 @@ button {
 
 .s5-progress-fill {
   height: 100%;
-  background: var(--color-border-info);
+  background: var(--color-terracotta);
   border-radius: 2px;
   width: 0%;
   transition: width 0.1s linear;
@@ -1077,12 +1087,15 @@ button {
 .admin-row input:focus { border-color: var(--color-border-info); }
 
 .admin-save-btn {
-  background: var(--color-background-info);
-  color: var(--color-text-info);
-  border: 0.5px solid var(--color-border-info);
+  background: var(--color-terracotta);
+  color: var(--color-cream);
+  border: none;
   width: 100%;
   text-align: center;
+  font-weight: 600;
 }
+
+.admin-save-btn:hover { background: var(--color-coral); }
 
 .admin-section-label {
   font-size: 11px;
@@ -2021,6 +2034,7 @@ button {
   color: var(--color-text-warning);
   line-height: 1.5;
   margin-bottom: 1rem;
+  animation: focusGlow 2.5s ease-in-out infinite;
 }
 
 /* ── B2-2 textarea ── */
@@ -2092,10 +2106,10 @@ button {
   line-height: 1.65;
 }
 
-/* ── B3 strategy reveal card ── */
+/* ── B3 strategy reveal card (teal = educational / calm) ── */
 .b3-strategy-card {
-  background: var(--color-background-info);
-  border: 0.5px solid var(--color-border-info);
+  background: #EBF3F6;
+  border: 0.5px solid var(--color-teal);
   border-radius: var(--border-radius-lg);
   padding: 1rem 1.1rem;
   margin: 0.25rem 0 1rem;
@@ -2104,24 +2118,25 @@ button {
 .b3-strategy-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-info);
+  font-family: var(--font-display);
+  color: var(--color-teal-deep);
   margin-bottom: 0.6rem;
 }
 
 .b3-strategy-body {
   font-size: 13px;
-  color: var(--color-text-info);
+  color: var(--color-teal-deep);
   line-height: 1.6;
 }
 
 .b3-strategy-body ol,
-.b3-strategy-body ul   { color: var(--color-text-info); }
-.b3-strategy-body strong { color: var(--color-text-info); }
+.b3-strategy-body ul     { color: var(--color-teal-deep); }
+.b3-strategy-body strong { color: var(--color-teal-deep); }
 
 .b3-strategy-why {
   margin-top: 0.75rem;
   font-size: 12px;
-  color: var(--color-text-info);
+  color: var(--color-teal-deep);
   opacity: 0.8;
   font-style: italic;
   line-height: 1.5;
@@ -2228,4 +2243,64 @@ button {
 
 .b3-video-hidden {
   display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Brand animations
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Recording Pulse — on active recording icon */
+/* (keyframe defined near .rec-icon.recording above) */
+
+/* 2. Progress Fill — smooth ease-out already set on .progress-fill */
+
+/* 3. Focus Glow — subtle pulse on tip cards */
+@keyframes focusGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 105, 82, 0); }
+  50%       { box-shadow: 0 0 8px 2px rgba(201, 105, 82, 0.12); }
+}
+
+/* 4. Pulse Success — one-shot entrance on screen7 comparison card */
+@keyframes pulseSuccess {
+  from { opacity: 0; transform: scale(0.92); }
+  60%  { transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+#screen7.active .comparison-card {
+  animation: pulseSuccess 0.7s ease-out forwards;
+}
+
+/* 5. Stagger Entrance — focus items, strategy list, B3 answer blocks */
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.focus-list .focus-item { animation: staggerIn 0.35s ease-out both; }
+.focus-list .focus-item:nth-child(1) { animation-delay: 0ms; }
+.focus-list .focus-item:nth-child(2) { animation-delay: 80ms; }
+.focus-list .focus-item:nth-child(3) { animation-delay: 160ms; }
+.focus-list .focus-item:nth-child(4) { animation-delay: 240ms; }
+
+.strategy-list li { animation: staggerIn 0.35s ease-out both; }
+.strategy-list li:nth-child(1) { animation-delay: 0ms; }
+.strategy-list li:nth-child(2) { animation-delay: 70ms; }
+.strategy-list li:nth-child(3) { animation-delay: 140ms; }
+.strategy-list li:nth-child(4) { animation-delay: 210ms; }
+.strategy-list li:nth-child(5) { animation-delay: 280ms; }
+.strategy-list li:nth-child(6) { animation-delay: 350ms; }
+.strategy-list li:nth-child(7) { animation-delay: 420ms; }
+.strategy-list li:nth-child(8) { animation-delay: 490ms; }
+
+.b3-answer-block:nth-child(1) { animation: staggerIn 0.35s 0ms   ease-out both; }
+.b3-answer-block:nth-child(2) { animation: staggerIn 0.35s 100ms ease-out both; }
+
+/* Accessibility: respect user motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

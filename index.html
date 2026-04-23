@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music Practice Coach</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#185FA5">
+  <meta name="theme-color" content="#C96952">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Practice">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -110,14 +113,14 @@
       <div class="mini-ref-body" id="mini-ref-body"></div>
     </details>
 
-    <!-- Note picker — pitch focus only -->
+    <!-- Note picker: pitch focus only -->
     <details class="note-picker-panel" id="note-picker-panel"
              ontoggle="onNotePickerToggle(this)" style="display:none;">
       <summary>Change drone note</summary>
       <div id="note-picker-container"></div>
     </details>
 
-    <!-- Skip recording — excerpt mode only -->
+    <!-- Skip recording: all modes -->
     <button class="btn-secondary" id="skip-to-eval-btn"
             style="width:100%; display:none; margin-bottom:0.5rem;"
             onclick="skipToEvaluation()">
@@ -154,7 +157,7 @@
     <!-- Dynamic body: S5 player (excerpt mode) OR Tagger (playthrough mode) -->
     <div id="s5-body"></div>
 
-    <!-- Evaluation questions — only shown in excerpt mode -->
+    <!-- Evaluation questions: only shown in excerpt mode -->
     <div id="s5-eval-section" style="display:none;">
       <div class="feedback-section">
         <div class="feedback-question">Did it match your represented idea?</div>
@@ -181,8 +184,8 @@
     </div>
     <div class="question" style="margin-top:auto;">Does the issue persist?</div>
     <div class="btn-group">
-      <button class="btn-secondary" onclick="goTo('screen-b1-2')">No — it seems to be gone</button>
-      <button class="btn-primary" onclick="goTo('screen-b1-3')">Yes — it keeps happening</button>
+      <button class="btn-secondary" onclick="goTo('screen-b1-2')">No, it seems to be gone</button>
+      <button class="btn-primary" onclick="goTo('screen-b1-3')">Yes, it keeps happening</button>
     </div>
   </div>
 
@@ -228,7 +231,7 @@
       <p>Step 1 of 3 · Isolation</p>
     </div>
     <div class="b-step-card">
-      <p class="b-step-text">Where exactly is the problem? Play just the problematic section — it could be a few notes or a few bars. Narrow it down as much as possible.</p>
+      <p class="b-step-text">Where exactly is the problem? Play just the problematic section (it could be a few notes or a few bars). Narrow it down as much as possible.</p>
     </div>
     <div class="b-tip">💡 Start with 2–4 bars. Keep narrowing until you find the single spot that goes wrong consistently.</div>
     <div style="margin-top:auto;">
@@ -236,7 +239,7 @@
         I found the exact spot →
       </button>
       <button class="btn-secondary btn-sm" style="width:100%;margin-top:0.5rem;text-align:center;" onclick="goTo('screen-b2-2')">
-        Skip — continue without isolating
+        Skip, continue without isolating
       </button>
     </div>
   </div>
@@ -250,13 +253,13 @@
     </div>
     <div id="b2-player-section"></div>
     <div class="b-step-card" style="margin-top:0.75rem;">
-      <p class="b-step-text">What exactly is the problem? Listen to your recording if you have one. Try to exaggerate the error — that often makes the real issue clearer.</p>
+      <p class="b-step-text">What exactly is the problem? Listen to your recording if you have one. Try to exaggerate the error, as that often makes the real issue clearer.</p>
     </div>
     <textarea id="b2-problem-input" class="b2-textarea"
               placeholder="e.g. The D in bar 3 is consistently sharp. My bow changes are choppy on the string crossings."></textarea>
     <div class="btn-group">
       <button class="btn-primary" onclick="saveProblemAndContinue()">Save &amp; continue →</button>
-      <button class="btn-secondary" onclick="flagForTeacherAndContinue()">I can't define it — flag for teacher &amp; continue</button>
+      <button class="btn-secondary" onclick="flagForTeacherAndContinue()">I can't define it; flag for teacher &amp; continue</button>
     </div>
   </div>
 
@@ -276,8 +279,8 @@
     </details>
     <div class="question" style="margin-top:1rem;">Does the problem persist at slow tempo?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="goTo('screen-b3')">Yes — still there at slow tempo</button>
-      <button class="btn-secondary" onclick="goTo('screen-b2-3-coord')">No — it disappears when I slow down</button>
+      <button class="btn-primary" onclick="goTo('screen-b3')">Yes, still there at slow tempo</button>
+      <button class="btn-secondary" onclick="goTo('screen-b2-3-coord')">No, it disappears when I slow down</button>
     </div>
   </div>
 
@@ -289,16 +292,16 @@
       <p>Coordination strategies</p>
     </div>
     <div class="b-step-card">
-      <p class="b-step-text">The issue disappears at slow tempo — this suggests a coordination or tempo-control challenge. Work through these strategies to gradually build speed.</p>
+      <p class="b-step-text">The issue disappears at slow tempo, suggesting a coordination or tempo-control challenge. Work through these strategies to gradually build speed.</p>
     </div>
     <div class="screen-scroll">
       <ul class="strategy-list" id="coord-strategy-list"></ul>
     </div>
     <div class="question" style="margin-top:0.75rem;">How is it going?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="goTo('screen-b4')">It's coming together — back to final coordination</button>
+      <button class="btn-primary" onclick="goTo('screen-b4')">It's coming together; back to final coordination</button>
       <button class="btn-secondary" onclick="recordIsolatedPassage()">Record for comparison</button>
-      <button class="btn-secondary" onclick="goTo('screen-b3')">Still having issues — try targeted strategies</button>
+      <button class="btn-secondary" onclick="goTo('screen-b3')">Still having issues; try targeted strategies</button>
     </div>
   </div>
 
@@ -336,7 +339,7 @@
     <div class="btn-group">
       <button class="btn-primary" onclick="restartPracticeLoop()">Practice a new passage</button>
       <button class="btn-secondary" onclick="recordIsolatedPassage()">Record this passage for comparison</button>
-      <button class="btn-secondary" onclick="goTo('screen-b2-1')">Still problems — return to isolation</button>
+      <button class="btn-secondary" onclick="goTo('screen-b2-1')">Still having problems; return to isolation</button>
       <button class="btn-secondary" onclick="endSession()">End practice session</button>
     </div>
   </div>

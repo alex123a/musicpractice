@@ -810,7 +810,7 @@ function animateWaveform() {
 function toggleStrategy(el) { el.classList.toggle('expanded'); }
 
 // ══════════════════════════════════════════════════════════════════════════
-// LOOP B — Problem Solving
+// LOOP B: Problem Solving
 // ══════════════════════════════════════════════════════════════════════════
 
 // ── Loop B helpers ─────────────────────────────────────────────────────────
@@ -927,7 +927,7 @@ const COORD_STRATEGIES = [
   {
     title : 'Gradual Metronome Increase',
     intro : 'Build speed step by step with the metronome',
-    detail: 'Start at the tempo where you can play the passage cleanly 2–3 times in a row. Then increase by 4–5 BPM and repeat. Only move up when the passage is clean — not just playable. Continue until you reach your target tempo.',
+    detail: 'Start at the tempo where you can play the passage cleanly 2–3 times in a row. Then increase by 4–5 BPM and repeat. Only move up when the passage is clean, not just playable. Continue until you reach your target tempo.',
   },
   {
     title : 'Rhythmic Pattern Variations',
@@ -942,7 +942,7 @@ const COORD_STRATEGIES = [
   {
     title : 'Anchor Notes and Stopping Points',
     intro : 'Define checkpoints and play between them',
-    detail: 'Choose 2–3 "anchor" notes in the passage — stable notes where you can pause and reset. Practice playing cleanly from anchor to anchor. This breaks the passage into manageable segments and prevents rushing through problem spots.',
+    detail: 'Choose 2–3 "anchor" notes in the passage (stable notes where you can pause and reset). Practice playing cleanly from anchor to anchor. This breaks the passage into manageable segments and prevents rushing through problem spots.',
   },
   {
     title : 'Note Grouping',
@@ -993,8 +993,8 @@ function renderB3() {
     </div>
     <div class="question">Is the focus still <strong>${label}</strong>?</div>
     <div class="btn-group">
-      <button class="btn-primary" onclick="confirmFocusAndStartTree()">Yes — keep this focus</button>
-      <button class="btn-secondary" onclick="showB3FocusPicker()">No — my focus has shifted</button>
+      <button class="btn-primary" onclick="confirmFocusAndStartTree()">Yes, keep this focus</button>
+      <button class="btn-secondary" onclick="showB3FocusPicker()">No, my focus has shifted</button>
     </div>
     <div id="b3-focus-picker" style="display:none; margin-top:0.5rem;">
       <div class="question" style="margin-bottom:0.5rem;">Choose new focus:</div>
@@ -1035,7 +1035,7 @@ function renderB3ComingSoon() {
       <div class="coming-soon-icon">🥁</div>
       <h2 class="coming-soon-title">Rhythm Strategies</h2>
       <p class="coming-soon-text">The targeted strategy tree for Pulse / Rhythm is coming in a future update.</p>
-      <p class="coming-soon-text" style="margin-top:0.5rem;">In the meantime, try the coordination strategies — they often address rhythm and pulse issues directly.</p>
+      <p class="coming-soon-text" style="margin-top:0.5rem;">In the meantime, try the coordination strategies, as they often address rhythm and pulse issues directly.</p>
     </div>
     <div class="btn-group" style="margin-top:auto;">
       <button class="btn-secondary" onclick="goTo('screen-b2-3-coord')">See coordination strategies</button>
@@ -1057,10 +1057,10 @@ const INTONATION_TREE = [
       body : `<p>Before your hands can play in tune, your mind needs a clear map of the passage.</p>
         <p style="margin-top:0.5rem;"><strong>What to do:</strong></p>
         <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
-          <li>Look at the score — name every interval between adjacent notes</li>
+          <li>Look at the score and name every interval between adjacent notes</li>
           <li>Note which fingers are close together and which stretch apart</li>
           <li>Identify the position and any shifts</li>
-          <li>Sing the passage — on pitch names, syllables, or just "la"</li>
+          <li>Sing the passage on pitch names, syllables, or just "la"</li>
           <li>Listen to a recording while following along in the score</li>
         </ol>
         <p class="b3-strategy-why">Without a clear target, your hands have nothing to aim for. This step builds the mental blueprint your fingers will follow.</p>`,
@@ -1070,22 +1070,22 @@ const INTONATION_TREE = [
     screenTitle: 'Hearing Intonation',
     question   : 'When you play, do you clearly hear which notes are out of tune?',
     yesLabel   : 'Yes, I can hear them',
-    noLabel    : 'No — I\'m not always sure',
+    noLabel    : 'No, I\'m not always sure',
     trigger    : 'no',
     strategy: {
       title: 'Build a Clear Mental Reference',
       body : `<p>You need a vivid inner sound to compare against what you play. Here are two approaches:</p>
-        <p style="margin-top:0.5rem;"><strong>Option A — Listen to a recording:</strong></p>
+        <p style="margin-top:0.5rem;"><strong>Option A: Listen to a recording:</strong></p>
         <ol style="margin:0.3rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
           <li>Listen 1–2 times with full attention (no distractions)</li>
           <li>Play the passage from memory</li>
           <li>Compare: does it match what you heard?</li>
-          <li>Listen again if needed — repeat until the reference is vivid</li>
+          <li>Listen again if needed, repeat until the reference is vivid</li>
         </ol>
-        <p style="margin-top:0.5rem;"><strong>Option B — Drone practice:</strong></p>
+        <p style="margin-top:0.5rem;"><strong>Option B: Drone practice:</strong></p>
         <ol style="margin:0.3rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
           <li>Set a drone on the tonic note of the passage</li>
-          <li>Play each note slowly — listen for how it harmonizes with the drone</li>
+          <li>Play each note slowly and listen for how it harmonizes with the drone</li>
           <li>Hold each note; adjust the pitch until it sounds "at rest"</li>
           <li>Repeat the passage, noticing how quickly you now find the correct pitch</li>
         </ol>
@@ -1094,17 +1094,17 @@ const INTONATION_TREE = [
   },
   {
     screenTitle: 'Direct vs. Corrected Intonation',
-    question   : 'Does a note sound out of tune when you first play it, but you can find the right pitch by correcting it afterward — never hitting it directly on the first try?',
-    yesLabel   : 'Yes — I always have to correct it',
-    noLabel    : 'No — I hit notes on the first try',
+    question   : 'Does a note sound out of tune when you first play it, but you can find the right pitch by correcting it afterward, never hitting it directly on the first try?',
+    yesLabel   : 'Yes, I always have to correct it',
+    noLabel    : 'No, I hit notes on the first try',
     trigger    : 'yes',
     strategy: {
       title: 'Hit the Note Directly',
-      body : `<p>You already have a good ear — you can detect errors and correct them. Now train your muscles to land on the correct pitch from the start.</p>
+      body : `<p>You already have a good ear: you can detect errors and correct them. Now train your muscles to land on the correct pitch from the start.</p>
         <p style="margin-top:0.5rem;"><strong>The exercise:</strong></p>
         <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
           <li>Play a note in the problem section</li>
-          <li>Stop immediately — do <em>not</em> correct it</li>
+          <li>Stop immediately and do <em>not</em> correct it</li>
           <li>Ask: was it too sharp, too flat, or correct?</li>
           <li>Reset your hand and try again, aiming slightly differently</li>
           <li>Repeat until you land correctly several times in a row</li>
@@ -1116,15 +1116,15 @@ const INTONATION_TREE = [
   {
     screenTitle: 'Mental Preparation',
     question   : 'Do you imagine the sound and feeling of each note in your mind before you play it?',
-    yesLabel   : 'Yes — I anticipate each note',
-    noLabel    : 'No — I just play',
+    yesLabel   : 'Yes, I anticipate each note',
+    noLabel    : 'No, I just play',
     trigger    : 'no',
     strategy: {
       title: 'Develop Internal Anticipation',
       body : `<p>Playing without imagining first makes it nearly impossible to predict and prevent intonation errors.</p>
         <p style="margin-top:0.5rem;"><strong>The exercise:</strong></p>
         <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.9;font-size:13px;">
-          <li>Set a very slow tempo — about half your normal speed</li>
+          <li>Set a very slow tempo, about half your normal speed</li>
           <li>Before each note, pause briefly</li>
           <li>Imagine the pitch, the feeling in your hand, where the finger lands on the string</li>
           <li>Now play the note</li>
@@ -1137,8 +1137,8 @@ const INTONATION_TREE = [
   {
     screenTitle: 'Persistent Sharp or Flat Notes',
     question   : 'Are there specific notes that consistently end up too sharp or too flat, no matter how carefully you try?',
-    yesLabel   : 'Yes — certain notes keep going wrong',
-    noLabel    : 'No — the problem is more general',
+    yesLabel   : 'Yes, certain notes keep going wrong',
+    noLabel    : 'No, the problem is more general',
     trigger    : 'yes',
     strategy: {
       title: 'Exaggeration Exercise',
@@ -1150,29 +1150,29 @@ const INTONATION_TREE = [
             <br>→ Always flat? Aim extremely high (even unnaturally so)
             <br>→ Always sharp? Aim extremely low</li>
           <li>Play the exaggerated version 3–5 times</li>
-          <li>Return to the correct pitch — it now feels easier to find</li>
+          <li>Return to the correct pitch; it now feels easier to find</li>
         </ol>
-        <p class="b3-strategy-why">Exaggeration expands what your body believes it can do. After hitting an extreme, the correct pitch feels like the comfortable middle — much more accessible.</p>`,
+        <p class="b3-strategy-why">Exaggeration expands what your body believes it can do. After hitting an extreme, the correct pitch feels like the comfortable middle, much more accessible.</p>`,
     },
   },
   {
     screenTitle: 'Physical Tension Check',
     question   : 'Do you feel physical discomfort, tension, or strain when trying to play in tune?',
-    yesLabel   : 'Yes — I notice tension',
-    noLabel    : 'No — I feel relaxed',
+    yesLabel   : 'Yes, I notice tension',
+    noLabel    : 'No, I feel relaxed',
     trigger    : 'yes',
     strategy: {
       title: 'Identify and Release Tension',
       body : `<p>Tension prevents your muscles from working efficiently. Check each area while you play the problem section:</p>
         <ul style="margin:0.4rem 0 0 1.2rem;line-height:2;font-size:13px;">
-          <li><strong>Feet &amp; legs</strong> — balanced, grounded, knees not locked</li>
-          <li><strong>Back &amp; spine</strong> — upright, centered, not rigid</li>
-          <li><strong>Shoulders</strong> — relaxed, not raised toward the ears</li>
-          <li><strong>Right elbow</strong> — hanging with gravity, not tense or locked</li>
-          <li><strong>Left wrist</strong> — relaxed, flexes naturally while playing</li>
-          <li><strong>Left thumb &amp; fingers</strong> — soft contact, not gripping the neck</li>
+          <li><strong>Feet &amp; legs:</strong> balanced, grounded, knees not locked</li>
+          <li><strong>Back &amp; spine:</strong> upright, centered, not rigid</li>
+          <li><strong>Shoulders:</strong> relaxed, not raised toward the ears</li>
+          <li><strong>Right elbow:</strong> hanging with gravity, not tense or locked</li>
+          <li><strong>Left wrist:</strong> relaxed, flexes naturally while playing</li>
+          <li><strong>Left thumb &amp; fingers:</strong> soft contact, not gripping the neck</li>
         </ul>
-        <p class="b3-strategy-why">Tension is often a topic best addressed with a teacher — patterns are easier to spot from outside. Consider saving this for your next lesson.</p>`,
+        <p class="b3-strategy-why">Tension is often a topic best addressed with a teacher; patterns are easier to spot from outside. Consider saving this for your next lesson.</p>`,
     },
   },
 ];
