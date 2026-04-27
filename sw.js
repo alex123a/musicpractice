@@ -1,4 +1,4 @@
-const CACHE = 'practice-coach-v28';
+const CACHE = 'practice-coach-v29';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './css/styles.css',
   './config.js',
   './js/db.js',
+  './js/dashboard.js',
   './js/app.js',
   './js/drone.js',
   './js/metronome.js',

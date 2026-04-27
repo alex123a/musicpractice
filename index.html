@@ -378,7 +378,7 @@
     <div class="question" style="margin-top:1.5rem;">Did the passage improve?</div>
     <div class="btn-group">
       <button class="btn-secondary" onclick="saveComparisonForTeacher()">Save for teacher discussion</button>
-      <button class="btn-primary" onclick="goTo('screen2')">Yes, practice next section →</button>
+      <button class="btn-primary" onclick="comparisonYes()">Yes, practice next section →</button>
       <button class="btn-secondary" onclick="showStrategyChoice()">No, return to strategies</button>
       <button class="btn-secondary" onclick="endSession()">End session</button>
     </div>
@@ -421,16 +421,58 @@
     <!-- Rendered by AdminModule.render() -->
   </div>
 
+  <!-- ── Screen: Dashboard ──────────────────────────────────────────────── -->
+  <div id="screen-dashboard" class="screen">
+    <div class="dash-top-bar">
+      <button class="back-btn" onclick="goTo('screen0')">← Back</button>
+      <h1 class="dash-title">My Progress</h1>
+    </div>
+
+    <!-- Streak header -->
+    <div id="dash-streak-header" class="dash-streak-header"></div>
+
+    <!-- Calendar -->
+    <div id="dash-calendar" class="dash-calendar-wrap"></div>
+
+    <!-- Stats row -->
+    <div id="dash-stats-row" class="dash-stats-row"></div>
+
+    <!-- Pieces list (shown by default) -->
+    <div id="dash-list-section">
+      <div class="dash-section-title">Your Pieces</div>
+      <div id="dash-pieces-list"></div>
+    </div>
+
+    <!-- Piece detail (hidden until piece is selected) -->
+    <div id="dash-detail-section" style="display:none">
+      <button class="dash-back-btn" onclick="DashboardModule.showPiecesList()">← All pieces</button>
+      <div id="dash-detail-title" class="dash-detail-title"></div>
+      <div id="dash-detail-stats" class="dash-detail-stats"></div>
+      <div class="dash-view-tabs">
+        <button class="dash-tab active" id="dash-tab-timeline" onclick="DashboardModule.showPiece(document.getElementById('dash-detail-title').textContent)">Timeline</button>
+      </div>
+      <div id="dash-detail-timeline" class="dash-detail-timeline"></div>
+    </div>
+  </div>
+
 </div><!-- /.app-container -->
 
-<!-- ── Sidebar ────────────────────────────────────────────────────────────── -->
-<button class="sidebar-toggle-btn" onclick="SidebarModule.toggle()" title="My projects">☰</button>
+<!-- ── Sidebar (left side) ───────────────────────────────────────────────── -->
+<button class="sidebar-toggle-btn" onclick="SidebarModule.toggle()" title="Menu">☰</button>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="SidebarModule.close()"></div>
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <h2>My Projects</h2>
+    <h2>Practice Coach</h2>
     <button class="sidebar-close-btn" onclick="SidebarModule.close()">✕</button>
   </div>
+  <!-- Dashboard nav button -->
+  <div class="sidebar-nav">
+    <button class="sidebar-nav-btn" onclick="SidebarModule.close(); goTo('screen-dashboard')">
+      📊 My Progress
+    </button>
+  </div>
+  <div class="sidebar-nav-divider"></div>
+  <div class="sidebar-projects-label">My Projects</div>
   <div id="sidebar-content" class="sidebar-content">
     <p class="sb-empty">No sessions saved yet.</p>
   </div>
@@ -449,6 +491,7 @@
 <script src="js/admin.js"></script>
 <script src="js/tagger.js"></script>
 <script src="js/sidebar.js"></script>
+<script src="js/dashboard.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

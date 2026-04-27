@@ -1,6 +1,6 @@
 const DB = (() => {
   const DB_NAME    = 'practice-coach';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   let dbPromise    = null;
 
   function open() {
@@ -15,6 +15,16 @@ const DB = (() => {
         }
         if (!db.objectStoreNames.contains('audio')) {
           db.createObjectStore('audio', { keyPath: 'sessionId' });
+        }
+        // v2: practice event tracking for dashboard
+        if (!db.objectStoreNames.contains('practiceEvents')) {
+          const pe = db.createObjectStore('practiceEvents', { keyPath: 'id', autoIncrement: true });
+          pe.createIndex('date',  'date',  { unique: false });
+          pe.createIndex('piece', 'piece', { unique: false });
+        }
+        // v2: streak data (single record, id = 'local')
+        if (!db.objectStoreNames.contains('streakData')) {
+          db.createObjectStore('streakData', { keyPath: 'id' });
         }
       };
       req.onsuccess = e => resolve(e.target.result);
@@ -157,5 +167,44 @@ const DB = (() => {
     }));
   }
 
-  return { open, saveSession, getSessionsForPiece, getAllSessions, getAudio, deleteSession, markTagPracticed, setTagPracticed, updateSessionTags, addProblemNote };
+  // ── Practice Events (dashboard tracking) ────────────────────────────────
+  function savePracticeEvent(event) {
+    return tx('practiceEvents', 'readwrite', s => s.add(event));
+  }
+
+  function getAllPracticeEvents() {
+    return open().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction('practiceEvents', 'readonly')
+                    .objectStore('practiceEvents').getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    }));
+  }
+
+  function getEventsForPiece(piece) {
+    return open().then(db => new Promise((resolve, reject) => {
+      const index = db.transaction('practiceEvents', 'readonly')
+                      .objectStore('practiceEvents').index('piece');
+      const req   = index.getAll(piece);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    }));
+  }
+
+  // ── Streak Data (single record, id = 'local') ────────────────────────────
+  function getStreakData() {
+    return tx('streakData', 'readonly', s => s.get('local'))
+      .then(r => r || null);
+  }
+
+  function updateStreakData(data) {
+    return tx('streakData', 'readwrite', s => s.put(data));
+  }
+
+  return {
+    open, saveSession, getSessionsForPiece, getAllSessions, getAudio,
+    deleteSession, markTagPracticed, setTagPracticed, updateSessionTags, addProblemNote,
+    savePracticeEvent, getAllPracticeEvents, getEventsForPiece,
+    getStreakData, updateStreakData,
+  };
 })();

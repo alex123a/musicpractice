@@ -22,6 +22,7 @@ const state = {
     focusCategory      : '',   // set from selectedFocus when entering B3
     questionIndex      : 0,    // current question in strategy tree
     showStrategy       : false,// whether strategy panel is open on current question
+    selectedStrategy   : '',   // strategy title shown in B3 tree
   },
 };
 
@@ -136,6 +137,172 @@ function goTo(screenId) {
   const target = document.getElementById(screenId);
   if (target) target.classList.add('active');
   onScreenEnter(screenId);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PRACTICE TRACKER — saves events & updates streak (no backend needed)
+// ══════════════════════════════════════════════════════════════════════════
+const PracticeTracker = (() => {
+
+  // Save one practice event and update the streak. Returns resolved streak.
+  async function saveEvent(action, result = null) {
+    const today    = _todayStr();
+    const piece    = state.pieceName || 'Unknown Piece';
+    const focus    = state.loopB.focusCategory || state.selectedFocus || 'general';
+    const problem  = state.loopB.problemDescription || '';
+    const strategy = action === 'strategy_selected' ? (state.loopB.selectedStrategy || null) : null;
+
+    const event = {
+      date            : today,
+      timestamp       : new Date().toISOString(),
+      piece,
+      focusArea       : focus,
+      problemStatement: problem,
+      completedAction : action,
+      strategyUsed    : strategy,
+      result          : result || null,
+    };
+
+    try {
+      await DB.savePracticeEvent(event);
+      return await _updateStreak(today);
+    } catch (e) {
+      console.error('PracticeTracker.saveEvent failed:', e);
+      return null;
+    }
+  }
+
+  // ── Streak logic ─────────────────────────────────────────────────────────
+  async function _updateStreak(today) {
+    let s = await DB.getStreakData();
+    if (!s) {
+      s = { id:'local', current:0, longest:0, lastPracticedDate:null,
+            freezeTokens:0, freezesUsedCount:0, practicedDates:[] };
+    }
+
+    // Already counted today — no change needed
+    if (s.lastPracticedDate === today) return s;
+
+    // Record this date
+    if (!s.practicedDates.includes(today)) s.practicedDates.push(today);
+
+    if (!s.lastPracticedDate) {
+      // Very first practice ever
+      s.current = 1;
+    } else {
+      const gap = _daysBetween(s.lastPracticedDate, today);
+      if (gap === 1) {
+        // Consecutive day
+        s.current += 1;
+        // Earn freeze token every 3 days (max 3)
+        if (s.current % 3 === 0 && s.freezeTokens < 3) s.freezeTokens += 1;
+      } else if (gap > 1) {
+        if (s.freezeTokens > 0) {
+          // Spend a token, protect streak
+          s.freezeTokens     -= 1;
+          s.freezesUsedCount += 1;
+        } else {
+          // Streak breaks
+          s.current = 1;
+        }
+      }
+    }
+
+    s.lastPracticedDate = today;
+    if (s.current > s.longest) s.longest = s.current;
+
+    await DB.updateStreakData(s);
+    return s;
+  }
+
+  function _todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function _daysBetween(a, b) {
+    return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000);
+  }
+
+  return { saveEvent };
+})();
+
+// ── Streak toast (brief, non-blocking) ─────────────────────────────────────
+function showStreakToast(streak) {
+  // Remove any existing toast
+  const old = document.getElementById('streak-toast');
+  if (old) old.remove();
+
+  if (!streak) return;
+
+  const toast = document.createElement('div');
+  toast.id = 'streak-toast';
+  toast.className = 'streak-toast';
+  toast.innerHTML = streak.current > 0
+    ? `🔥 ${streak.current}-day streak continues!`
+    : '✓ Practice session saved!';
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => toast.classList.add('streak-toast-visible'));
+
+  // Auto-dismiss after 3s
+  setTimeout(() => {
+    toast.classList.remove('streak-toast-visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ── B4 completion dialog ────────────────────────────────────────────────────
+function showB4CompletionDialog(streak, onContinue) {
+  const old = document.getElementById('b4-completion-overlay');
+  if (old) old.remove();
+
+  const piece    = state.pieceName || 'this piece';
+  const problem  = state.loopB.problemDescription || 'the passage';
+  const strategy = state.loopB.selectedStrategy;
+  const streakTxt = streak && streak.current > 0
+    ? `🔥 ${streak.current}-day streak${streak.current >= 3 ? ' — great consistency!' : '!'}`
+    : '✓ Practice recorded!';
+
+  const overlay = document.createElement('div');
+  overlay.id    = 'b4-completion-overlay';
+  overlay.className = 'b4-completion-overlay';
+  overlay.innerHTML = `
+    <div class="b4-completion-dialog">
+      <div class="b4-completion-icon">✓✓✓</div>
+      <h2 class="b4-completion-title">Progress saved!</h2>
+      ${problem ? `<p class="b4-completion-problem">"${_escHtml(problem)}"</p>` : ''}
+      ${strategy ? `<p class="b4-completion-strategy">Strategy used: ${_escHtml(strategy)}</p>` : ''}
+      <p class="b4-completion-streak">${streakTxt}</p>
+      <div class="b4-completion-btns">
+        <button class="btn-primary" id="b4-btn-continue">Continue practice →</button>
+        <button class="btn-secondary" id="b4-btn-dashboard">View dashboard</button>
+        <button class="btn-secondary" id="b4-btn-exit">End session</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById('b4-btn-continue').onclick = () => {
+    overlay.remove();
+    onContinue();
+  };
+  document.getElementById('b4-btn-dashboard').onclick = () => {
+    overlay.remove();
+    onContinue();           // still do the state reset
+    goTo('screen-dashboard');
+  };
+  document.getElementById('b4-btn-exit').onclick = () => {
+    overlay.remove();
+    endSession();
+  };
+}
+
+function _escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function onScreenEnter(screenId) {
@@ -271,6 +438,10 @@ function onScreenEnter(screenId) {
 
   if (screenId === 'screen-comparison') {
     renderComparisonScreen();
+  }
+
+  if (screenId === 'screen-dashboard') {
+    DashboardModule.render().catch(console.error);
   }
 
   if (screenId === 'screen7') {
@@ -839,15 +1010,29 @@ function toggleStrategy(el) { el.classList.toggle('expanded'); }
 
 // ── Loop B helpers ─────────────────────────────────────────────────────────
 function restartPracticeLoop() {
-  state.loopB.problemDescription = '';
-  state.loopB.teacherReview      = false;
-  state.loopB.questionIndex      = 0;
-  state.loopB.showStrategy       = false;
-  state.loopB.focusCategory      = '';
-  resetRecording();
-  state.selectedTag   = null;
-  state.isIsolatedPassage = false;
-  goTo('screen2');
+  // Capture loopB state before clearing (needed for dialog + event)
+  const _doReset = () => {
+    state.loopB.problemDescription = '';
+    state.loopB.teacherReview      = false;
+    state.loopB.questionIndex      = 0;
+    state.loopB.showStrategy       = false;
+    state.loopB.focusCategory      = '';
+    state.loopB.selectedStrategy   = '';
+    resetRecording();
+    state.selectedTag       = null;
+    state.isIsolatedPassage = false;
+    goTo('screen2');
+  };
+
+  // Save result_evaluated event, then show completion dialog
+  PracticeTracker.saveEvent('result_evaluated', 'solved')
+    .then(streak => {
+      showB4CompletionDialog(streak, _doReset);
+    })
+    .catch(err => {
+      console.error(err);
+      _doReset(); // fallback: continue without dialog
+    });
 }
 
 // ── B2-2: Compact recording player ─────────────────────────────────────────
@@ -926,6 +1111,10 @@ function saveProblemAndContinue() {
   state.loopB.problemDescription = input ? input.value.trim() : '';
   state.loopB.teacherReview = false;
   _saveProblemToSession();
+  // Track practice event + update streak
+  PracticeTracker.saveEvent('problem_identified').then(streak => {
+    showStreakToast(streak);
+  }).catch(console.error);
   goTo('screen-b2-3');
 }
 
@@ -934,6 +1123,10 @@ function flagForTeacherAndContinue() {
   state.loopB.problemDescription = input ? input.value.trim() : '';
   state.loopB.teacherReview = true;
   _saveProblemToSession();
+  // Track practice event + update streak
+  PracticeTracker.saveEvent('problem_identified').then(streak => {
+    showStreakToast(streak);
+  }).catch(console.error);
   goTo('screen-b2-3');
 }
 
@@ -1141,6 +1334,24 @@ function seekComparisonPlayback(elementId, e) {
   const rect = wrap.getBoundingClientRect();
   const percent = (e.clientX - rect.left) / rect.width;
   audio.currentTime = percent * audio.duration;
+}
+
+// "Yes, it improved" on the comparison screen
+function comparisonYes() {
+  PracticeTracker.saveEvent('result_evaluated', 'solved')
+    .then(streak => {
+      showB4CompletionDialog(streak, () => {
+        state.loopB.problemDescription = '';
+        state.loopB.teacherReview      = false;
+        state.loopB.questionIndex      = 0;
+        state.loopB.showStrategy       = false;
+        state.loopB.focusCategory      = '';
+        state.loopB.selectedStrategy   = '';
+        state.isIsolatedPassage        = false;
+        goTo('screen2');
+      });
+    })
+    .catch(() => goTo('screen2'));
 }
 
 function showStrategyChoice() {
@@ -1493,7 +1704,13 @@ function renderB3StrategyScreen(index, showStrategy) {
 }
 
 function b3AnswerTrigger(index) {
-  // The answer that triggers showing the strategy
+  // Record which strategy is being shown
+  state.loopB.selectedStrategy = INTONATION_TREE[index].strategy.title;
+  // Track practice event + update streak
+  PracticeTracker.saveEvent('strategy_selected').then(streak => {
+    showStreakToast(streak);
+  }).catch(console.error);
+  // Show the strategy in the tree
   renderB3StrategyScreen(index, true);
 }
 
