@@ -158,84 +158,110 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.40, audioCtx.currentTime + 0.35);
   }
 
-  // ── Meditative mode: enhanced bagpipe with clearer fifth + echo effect ──────
+  // ── Meditative mode: two bagpipes — root and fifth as separate voices ───────
   function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Bright low-pass for clarity
-    const lpf = audioCtx.createBiquadFilter();
-    lpf.type = 'lowpass';
-    lpf.frequency.value = 3500;
-    lpf.Q.value = 0.6;
+    // === VOICE 1: ROOT NOTE BAGPIPE ===
+    const rootFilter = audioCtx.createBiquadFilter();
+    rootFilter.type = 'lowpass';
+    rootFilter.frequency.value = 3500;
+    rootFilter.Q.value = 0.6;
 
-    // Echo/reverb using delay node with feedback
-    const echoDelay = audioCtx.createDelay(1.0);
-    const echoGain = audioCtx.createGain();
-    const echoFeedback = audioCtx.createGain();
+    const rootTremolo = audioCtx.createOscillator();
+    const rootTremoloGain = audioCtx.createGain();
+    const rootTremoloDepth = audioCtx.createGain();
+    rootTremolo.type = 'sine';
+    rootTremolo.frequency.value = 1.5;
+    rootTremoloGain.gain.value = 1;
+    rootTremoloDepth.gain.value = 0.04;
+    rootTremolo.connect(rootTremoloDepth);
+    rootTremoloDepth.connect(rootTremoloGain.gain);
+    rootTremolo.start();
+    droneNodes.push(rootTremolo, rootTremoloGain, rootTremoloDepth);
 
-    echoDelay.delayTime.value = 0.08; // 80ms echo
-    echoGain.gain.value = 0.35;       // wet signal level
-    echoFeedback.gain.value = 0.25;   // feedback amount (decays naturally)
+    rootFilter.connect(masterGain);
 
-    masterGain.connect(lpf);
-    lpf.connect(echoDelay);
-    echoDelay.connect(echoGain);
-    echoGain.connect(audioCtx.destination);
-
-    // Echo feedback loop
-    echoGain.connect(echoFeedback);
-    echoFeedback.connect(echoDelay);
-
-    // Dry signal also goes to destination
-    lpf.connect(audioCtx.destination);
-
-    droneNodes.push(lpf, echoDelay, echoGain, echoFeedback);
-
-    // Slow meditative tremolo (1.5 Hz) with subtle depth for deep breathing
-    const tremolo = audioCtx.createOscillator();
-    const tremoloGain = audioCtx.createGain();
-    const tremoloDepth = audioCtx.createGain();
-    tremolo.type = 'sine';
-    tremolo.frequency.value = 1.5; // Much slower for meditative feel
-    tremoloGain.gain.value = 1;
-    tremoloDepth.gain.value = 0.04; // Subtle amplitude variation
-    tremolo.connect(tremoloDepth);
-    tremoloDepth.connect(tremoloGain.gain);
-    tremolo.start();
-    droneNodes.push(tremolo, tremoloGain, tremoloDepth);
-
-    function addPipe(frequency, gain) {
+    function addRootPipe(frequency, gain) {
       const osc = audioCtx.createOscillator();
       const g   = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.value = frequency;
       g.gain.value = gain;
       osc.connect(g);
-      g.connect(tremoloGain); // through tremolo
-      tremoloGain.connect(masterGain);
+      g.connect(rootTremoloGain);
+      rootTremoloGain.connect(rootFilter);
       osc.start();
       droneNodes.push(osc, g);
     }
 
-    // Deep sub-octave resonance for meditative grounding
-    addPipe(freq * 0.25, 0.08); // Two octaves below for resonance
+    // Root voice: fundamental + lower harmonics (warm, deep)
+    addRootPipe(freq * 0.25, 0.10);  // Deep resonance
+    addRootPipe(freq * 0.5, 0.22);   // Sub-octave foundation
+    addRootPipe(freq * 1.0, 0.40);   // Fundamental (strong)
+    addRootPipe(freq * 2.0, 0.14);   // Octave
 
-    // Root note foundation (slightly reduced to let fifth stand out)
-    addPipe(freq * 0.5, 0.18);  // Sub-octave (deeper)
-    addPipe(freq * 1.0, 0.35);  // Fundamental (reduced from 0.42)
-    addPipe(freq * 2.0, 0.12);  // Octave
+    // === VOICE 2: FIFTH BAGPIPE (Separate chain) ===
+    const fifthFilter = audioCtx.createBiquadFilter();
+    fifthFilter.type = 'lowpass';
+    fifthFilter.frequency.value = 3400; // Slightly different from root
+    fifthFilter.Q.value = 0.65;
 
-    // FIFTH AS A SEPARATE MELODIC VOICE — heard as two notes, not an overtone
+    const fifthTremolo = audioCtx.createOscillator();
+    const fifthTremoloGain = audioCtx.createGain();
+    const fifthTremoloDepth = audioCtx.createGain();
+    fifthTremolo.type = 'sine';
+    fifthTremolo.frequency.value = 1.4; // Slightly different tempo (not locked)
+    fifthTremoloGain.gain.value = 1;
+    fifthTremoloDepth.gain.value = 0.045;
+    fifthTremolo.connect(fifthTremoloDepth);
+    fifthTremoloDepth.connect(fifthTremoloGain.gain);
+    fifthTremolo.start();
+    droneNodes.push(fifthTremolo, fifthTremoloGain, fifthTremoloDepth);
+
+    fifthFilter.connect(masterGain);
+
+    function addFifthPipe(frequency, gain) {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(fifthTremoloGain);
+      fifthTremoloGain.connect(fifthFilter);
+      osc.start();
+      droneNodes.push(osc, g);
+    }
+
+    // Fifth voice: perfect fifth + its harmonics (separate melodic line)
     const fifth = freq * FIFTH_RATIO;
-    addPipe(fifth * 0.5, 0.25);  // Fifth sub-octave — STRONG foundation for fifth
-    addPipe(fifth * 1.0, 0.90);  // Fifth unison — DOMINANT (equal to fundamental presence)
-    addPipe(fifth * 2.0, 0.35);  // Fifth octave — PROMINENT and CLEAR
+    addFifthPipe(fifth * 0.5, 0.28);   // Fifth sub-octave — strong independent presence
+    addFifthPipe(fifth * 1.0, 0.95);   // Fifth unison — DOMINANT, heard as main note
+    addFifthPipe(fifth * 2.0, 0.38);   // Fifth octave — bright and clear
+    addFifthPipe(fifth * 3.0, 0.12);   // Fifth + major third harmonic
 
-    // Upper harmonics for reedy character
-    addPipe(freq * 3.0, 0.08);   // Third harmonic
-    addPipe(freq * 5.0, 0.05);   // Fifth harmonic
+    // === ECHO EFFECT (on master output) ===
+    const echoDelay = audioCtx.createDelay(1.0);
+    const echoGain = audioCtx.createGain();
+    const echoFeedback = audioCtx.createGain();
 
-    // Strong but grounded presence
+    echoDelay.delayTime.value = 0.08;
+    echoGain.gain.value = 0.30;
+    echoFeedback.gain.value = 0.22;
+
+    masterGain.connect(echoDelay);
+    echoDelay.connect(echoGain);
+    echoGain.connect(audioCtx.destination);
+    echoGain.connect(echoFeedback);
+    echoFeedback.connect(echoDelay);
+
+    // Dry signal
+    masterGain.connect(audioCtx.destination);
+
+    droneNodes.push(rootFilter, fifthFilter, echoDelay, echoGain, echoFeedback);
+
+    // Master volume
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
     masterGain.gain.linearRampToValueAtTime(0.45, audioCtx.currentTime + 0.06);
   }
