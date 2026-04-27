@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Coach — Animation Usage Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F8F7F5;
+            color: #2D3436;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #C96952;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .animation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .anim-card {
+            background: white;
+            border: 2px solid #E8927C;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(201, 105, 82, 0.1);
+        }
+
+        .anim-card-header {
+            background: linear-gradient(135deg, #C96952 0%, #E8927C 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .anim-card-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .anim-card-header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .anim-card-body {
+            padding: 20px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #C96952;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2D3436;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #5F5C58;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .list-section {
+            margin-bottom: 16px;
+        }
+
+        .list-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list-section li {
+            font-size: 12px;
+            color: #5F5C58;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .list-section li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4A7C8F;
+            font-weight: 600;
+        }
+
+        .warning-section ul li::before {
+            content: '✕';
+            color: #B85C52;
+        }
+
+        .code-small {
+            background: #2D3436;
+            color: #F5F3F0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-top: 8px;
+            display: block;
+        }
+
+        .mindful-guide {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+
+        .mindful-guide h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #C96952;
+            margin-bottom: 20px;
+        }
+
+        .mindful-principles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .principle {
+            background: #FBF7F5;
+            border-left: 4px solid #C96952;
+            padding: 16px;
+            border-radius: 6px;
+        }
+
+        .principle h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #C96952;
+            margin-bottom: 8px;
+        }
+
+        .principle p {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .usage-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+            font-size: 13px;
+            background: white;
+        }
+
+        .usage-matrix th {
+            background: #E8927C;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .usage-matrix td {
+            padding: 12px;
+            border-bottom: 1px solid #E8927C;
+        }
+
+        .usage-matrix tr:nth-child(odd) {
+            background: #FCF8F5;
+        }
+
+        .usage-matrix tr:hover {
+            background: #FBF7F5;
+        }
+
+        .animation-label {
+            font-weight: 600;
+            color: #C96952;
+        }
+
+        .footer {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .footer h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #C96952;
+            margin-bottom: 16px;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .checklist {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .checklist li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Animation Usage Guide</h1>
+        <p>How to use the 5 shortlisted animations mindfully — when to use them, when NOT to use them, and why each one matters.</p>
+    </div>
+
+    <!-- MINDFUL PRINCIPLES -->
+    <div class="mindful-guide">
+        <h2>Principles for Mindful Animation Use</h2>
+
+        <div class="mindful-principles">
+            <div class="principle">
+                <h4>1. Purpose First</h4>
+                <p>Every animation must answer: "Why is this here?" If you can't answer that clearly, don't animate it.</p>
+            </div>
+
+            <div class="principle">
+                <h4>2. Respect Focus</h4>
+                <p>Practice requires concentration. Animations support practice, never interrupt it. No auto-playing, no continuous loops during active work.</p>
+            </div>
+
+            <div class="principle">
+                <h4>3. One Thing at a Time</h4>
+                <p>Max 2 animations on screen simultaneously (e.g., recording pulse + progress bar is OK, but not more). Prevents overwhelm.</p>
+            </div>
+
+            <div class="principle">
+                <h4>4. Celebrate, Don't Distract</h4>
+                <p>Use animations for milestones and achievements. Don't animate every micro-interaction. Reserve motion for moments that matter.</p>
+            </div>
+
+            <div class="principle">
+                <h4>5. Accessibility Always</h4>
+                <p>Respect <code>prefers-reduced-motion</code>. Provide instant, non-animated fallback. No information should be hidden until animation completes.</p>
+            </div>
+
+            <div class="principle">
+                <h4>6. Timing Matters</h4>
+                <p>300–800ms range (responsive, not sluggish). Never faster than 200ms (feels snappy, wrong tone). Never slower than 1s (unless intentional loop).</p>
+            </div>
+        </div>
+
+        <!-- USAGE MATRIX -->
+        <h3 style="font-size: 18px; font-weight: 600; color: #2D3436; margin-top: 40px; margin-bottom: 20px;">Animation Usage Matrix</h3>
+        
+        <table class="usage-matrix">
+            <thead>
+                <tr>
+                    <th>Animation</th>
+                    <th>When to Use ✓</th>
+                    <th>When NOT to Use ✕</th>
+                    <th>Frequency</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="animation-label">Recording Pulse</span></td>
+                    <td>While recording is actively running. Gives clear "I'm listening" feedback.</td>
+                    <td>When paused, stopped, or before recording starts. Don't animate a static state.</td>
+                    <td>Once per session (while recording)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Progress Fill</span></td>
+                    <td>Every screen transition (0→33→66→100%). Shows forward momentum consistently.</td>
+                    <td>During active practice/recording. Don't distract from the actual work.</td>
+                    <td>5–6 times per session (once per major screen)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Focus Glow</span></td>
+                    <td>Tip cards, hints, educational guidance. Gentle "pay attention to this" signal.</td>
+                    <td>Primary CTAs (buttons already have focus). Regular content (only special, hint-like content).</td>
+                    <td>2–3 times per session max (reserve for real hints)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Pulse Success</span></td>
+                    <td>Success screens, problem-solved moments, real achievements. Celebrate milestones.</td>
+                    <td>Small interactions or button clicks. Only for meaningful accomplishments, not everything.</td>
+                    <td>1–2 times per session (genuine achievements)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Stagger Entrance</span></td>
+                    <td>Option lists (focus selection, strategy steps). Organizes info thoughtfully without dumping.</td>
+                    <td>Single items (no point staggering one thing). Error messages or negative feedback lists.</td>
+                    <td>3–4 times per session (one per list)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ANIMATION CARDS -->
+    <div class="animation-cards">
+
+        <!-- RECORDING PULSE -->
+        <div class="anim-card">
+            <div class="anim-card-header">
+                <h3>Recording Pulse</h3>
+                <p>1.2s loop • Active recording state</p>
+            </div>
+            <div class="anim-card-body">
+                <span class="section-label">Use When</span>
+                <div class="list-section">
+                    <ul>
+                        <li>Recording is actively running</li>
+                        <li>Capturing practice performance</li>
+                        <li>Giving user clear feedback: "I'm listening"</li>
+                    </ul>
+                </div>
+
+                <span class="section-label">Don't Use When</span>
+                <div class="list-section warning-section">
+                    <ul>
+                        <li>Recording is paused or stopped</li>
+                        <li>Before user hits record button</li>
+                        <li>In sections where practice doesn't happen</li>
+                    </ul>
+                </div>
+
+                <span class="section-title">Implementation</span>
+                <div class="info-text">Apply to record button center. Pulse dot + expanding ring simultaneously.</div>
+                <span class="code-small">recordingState === 'active' → start pulse</span>
+                <span class="code-small">recordingState !== 'active' → remove pulse</span>
+            </div>
+        </div>
+
+        <!-- PROGRESS FILL -->
+        <div class="anim-card">
+            <div class="anim-card-header">
+                <h3>Progress Fill</h3>
+                <p>2s ease-out • Session progress</p>
+            </div>
+            <div class="anim-card-body">
+                <span class="section-label">Use When</span>
+                <div class="list-section">
+                    <ul>
+                        <li>User enters new screen (33%→66%→100%)</li>
+                        <li>Moving through practice session steps</li>
+                        <li>Showing continuous forward momentum</li>
+                    </ul>
+                </div>
+
+                <span class="section-label">Don't Use When</span>
+                <div class="list-section warning-section">
+                    <ul>
+                        <li>During active recording (don't distract)</li>
+                        <li>Jump bar abruptly (always animate)</li>
+                        <li>User is in focused practice mode</li>
+                    </ul>
+                </div>
+
+                <span class="section-title">Implementation</span>
+                <div class="info-text">At top of every screen. Animates 0→33→66→100% as user progresses.</div>
+                <span class="code-small">animate progress: currentWidth → targetWidth (2s)</span>
+            </div>
+        </div>
+
+        <!-- FOCUS GLOW -->
+        <div class="anim-card">
+            <div class="anim-card-header">
+                <h3>Focus Glow</h3>
+                <p>2s loop • Gentle attention</p>
+            </div>
+            <div class="anim-card-body">
+                <span class="section-label">Use When</span>
+                <div class="list-section">
+                    <ul>
+                        <li>Tip cards appear ("Did you know?")</li>
+                        <li>Educational hints on problem-solving</li>
+                        <li>Important guidance needs soft attention</li>
+                    </ul>
+                </div>
+
+                <span class="section-label">Don't Use When</span>
+                <div class="list-section warning-section">
+                    <ul>
+                        <li>Primary buttons or CTAs (they're already clear)</li>
+                        <li>Regular content (only hints/tips)</li>
+                        <li>Every card at once (focus = sparse, intentional)</li>
+                    </ul>
+                </div>
+
+                <span class="section-title">Implementation</span>
+                <div class="info-text">Soft terracotta glow expands and fades. Remove after user dismisses tip.</div>
+                <span class="code-small">class="tip-card" → apply focusGlow animation</span>
+            </div>
+        </div>
+
+        <!-- PULSE SUCCESS -->
+        <div class="anim-card">
+            <div class="anim-card-header">
+                <h3>Pulse Success</h3>
+                <p>1s once • Achievement celebration</p>
+            </div>
+            <div class="anim-card-body">
+                <span class="section-label">Use When</span>
+                <div class="list-section">
+                    <ul>
+                        <li>Success screen appears ("Great work!")</li>
+                        <li>Problem is solved and confirmed</li>
+                        <li>Real, meaningful milestone reached</li>
+                    </ul>
+                </div>
+
+                <span class="section-label">Don't Use When</span>
+                <div class="list-section warning-section">
+                    <ul>
+                        <li>Small interactions or button clicks</li>
+                        <li>Every minor accomplishment (reserve for big wins)</li>
+                        <li>During active practice (only at completion)</li>
+                    </ul>
+                </div>
+
+                <span class="section-title">Implementation</span>
+                <div class="info-text">Checkmark grows from center. Ring expands and fades. One-time, not looped.</div>
+                <span class="code-small">successState === true → trigger pulse once</span>
+            </div>
+        </div>
+
+        <!-- STAGGER ENTRANCE -->
+        <div class="anim-card">
+            <div class="anim-card-header">
+                <h3>Stagger Entrance</h3>
+                <p>400ms + 100ms delay • List reveal</p>
+            </div>
+            <div class="anim-card-body">
+                <span class="section-label">Use When</span>
+                <div class="list-section">
+                    <ul>
+                        <li>Focus selection options appear</li>
+                        <li>Strategy steps or list of choices</li>
+                        <li>3–5 items that need sequential reveal</li>
+                    </ul>
+                </div>
+
+                <span class="section-label">Don't Use When</span>
+                <div class="list-section warning-section">
+                    <ul>
+                        <li>Single items (no stagger needed)</li>
+                        <li>More than 5 items (adjust timing or split)</li>
+                        <li>Error messages or negative lists</li>
+                    </ul>
+                </div>
+
+                <span class="section-title">Implementation</span>
+                <div class="info-text">Each item slides from left. 100ms delay between items. Creates organized reveal.</div>
+                <span class="code-small">animation-delay: [index * 100]ms per item</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MOTION BUDGET -->
+    <div class="mindful-guide" style="background: #FBF7F5; border: 2px solid #E8927C;">
+        <h2>Motion Budget Example: One Practice Session</h2>
+        
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Here's how many times each animation should appear in a typical practice session:</p>
+
+        <table class="usage-matrix" style="margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th>Animation</th>
+                    <th>Expected Uses</th>
+                    <th>Total Animation Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="animation-label">Recording Pulse</span></td>
+                    <td>1× (during recording, ~2 min)</td>
+                    <td>120 seconds looped</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Progress Fill</span></td>
+                    <td>5–6× (per screen transition)</td>
+                    <td>10–12 seconds total (2s × 5–6)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Focus Glow</span></td>
+                    <td>2–3× (tip cards)</td>
+                    <td>4–6 seconds (shown, not counted)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Pulse Success</span></td>
+                    <td>1–2× (big wins)</td>
+                    <td>1–2 seconds total (1s × 1–2)</td>
+                </tr>
+                <tr>
+                    <td><span class="animation-label">Stagger Entrance</span></td>
+                    <td>3–4× (lists)</td>
+                    <td>1.2–1.6 seconds total (400ms × 3–4)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="font-size: 13px; color: #666; line-height: 1.6;">
+            <strong>Total active animation time per session:</strong> ~15–20 seconds of visible motion (excluding recording pulse loop, which happens in background). This is intentional and sparse — motion doesn't dominate the experience, but it's present when it matters.
+        </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <h3>Key Takeaway: Motion with Purpose</h3>
+        <p>
+            The 5 animations are <strong>not decorative</strong>. Each one serves a specific emotional or functional purpose in the Practice Coach experience:
+        </p>
+        <ul class="checklist" style="list-style: none; padding: 0;">
+            <li>✓ <strong>Recording Pulse</strong> = "I'm present and listening to your effort"</li>
+            <li>✓ <strong>Progress Fill</strong> = "You're moving forward through this session"</li>
+            <li>✓ <strong>Focus Glow</strong> = "Here's something useful, no pressure"</li>
+            <li>✓ <strong>Pulse Success</strong> = "You achieved something real — celebrate it"</li>
+            <li>✓ <strong>Stagger Entrance</strong> = "Here are your options, take your time"</li>
+        </ul>
+        <p style="margin-top: 24px; font-size: 12px; color: #999;">
+            Use them mindfully. Respect user focus. Let motion support practice, never distract from it.
+        </p>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -7,7 +7,7 @@ const DroneModule = (() => {
   let droneNodes  = [];
   let masterGain  = null;
   let isPlaying   = false;
-  let droneMode   = 'orchestra'; // 'pure' | 'orchestra'
+  let droneMode   = 'symphonic'; // 'string' | 'symphonic' | 'meditative'
   let currentNote = 'A';
   let currentAStandard = CONFIG.defaultAStandard;
 
@@ -15,25 +15,34 @@ const DroneModule = (() => {
     return aStandard * Math.pow(2, NOTE_OFFSETS[note] / 12);
   }
 
-  // ── Pure mode: single-layer harmonic sine stack ───────────────────────────
-  function buildPureDrone(freq) {
+  // ── String mode: solo string instrument with natural vibrato ───────────────
+  function buildStringDrone(freq) {
     masterGain = audioCtx.createGain();
 
+    // Warm, woody low-pass filter
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = freq * 6;
-    filter.Q.value = 0.7;
+    filter.frequency.value = 2200;
+    filter.Q.value = 0.8;
     masterGain.connect(filter);
     filter.connect(audioCtx.destination);
     droneNodes.push(filter);
 
+    // Natural vibrato (like a violinist's bow vibrato at 5.5 Hz)
+    const vibrato = audioCtx.createOscillator();
+    const vibratoGain = audioCtx.createGain();
+    vibrato.type = 'sine';
+    vibrato.frequency.value = 5.5;
+    vibratoGain.gain.value = 8; // ±8 cents
+    vibrato.connect(vibratoGain);
+    vibrato.start();
+    droneNodes.push(vibrato, vibratoGain);
+
+    // Build harmonics with vibrato
     [
-      [1,   0.50,  0   ],
-      [2,   0.20,  1.5 ],
-      [3,   0.12,  0   ],
-      [4,   0.08, -1.5 ],
-      [5,   0.05,  0   ],
-      [0.5, 0.06,  0   ],
+      [1, 0.55, 0],      // fundamental - strong
+      [2, 0.20, 0.5],    // octave - slightly detuned for richness
+      [3, 0.12, -0.5],   // fifth - opposite detune
     ].forEach(([mult, gain, detune]) => {
       const osc = audioCtx.createOscillator();
       const g   = audioCtx.createGain();
@@ -41,38 +50,40 @@ const DroneModule = (() => {
       osc.frequency.value = freq * mult;
       osc.detune.value = detune;
       g.gain.value = gain;
+      vibratoGain.connect(osc.detune);
       osc.connect(g);
       g.connect(masterGain);
       osc.start();
       droneNodes.push(osc, g);
     });
 
+    // Slow attack (150ms) like bowing
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.08);
+    masterGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.15);
   }
 
-  // ── Orchestra mode: ensemble detuning + vibrato + fifth ──────────────────
-  function buildOrchestralDrone(freq) {
+  // ── Symphonic mode: full ensemble with warm base + bright harmonics ────────
+  function buildSymphonicDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Warm low-pass + subtle high shelf cut
+    // Warm base with subtle high-end cut
     const lpf = audioCtx.createBiquadFilter();
     lpf.type = 'lowpass';
-    lpf.frequency.value = 3800;
+    lpf.frequency.value = 4200; // Brighter than string but still warm
     lpf.Q.value = 0.5;
 
     const shelf = audioCtx.createBiquadFilter();
     shelf.type = 'highshelf';
     shelf.frequency.value = 2000;
-    shelf.gain.value = -6; // roll off high end for warmth
+    shelf.gain.value = -4; // Warm bass emphasis
 
     masterGain.connect(lpf);
     lpf.connect(shelf);
     shelf.connect(audioCtx.destination);
     droneNodes.push(lpf, shelf);
 
-    // Vibrato LFO — 5.5 Hz, ±6 cents, simulates natural bow variation
-    const lfo     = audioCtx.createOscillator();
+    // Subtle vibrato (5.5 Hz, ±6 cents)
+    const lfo = audioCtx.createOscillator();
     const lfoGain = audioCtx.createGain();
     lfo.type = 'sine';
     lfo.frequency.value = 5.5;
@@ -81,17 +92,15 @@ const DroneModule = (() => {
     lfo.start();
     droneNodes.push(lfo, lfoGain);
 
-    // Each entry: [freq multiplier, total gain, ensemble spread cents]
-    // 3 oscillators per harmonic, spread across ±spread cents
+    // Rich harmonic series with ensemble spread
     const harmonics = [
-      [1,    0.38, 8 ],  // fundamental — wide ensemble spread
-      [2,    0.18, 7 ],  // octave
-      [3,    0.11, 9 ],  // fifth above octave
-      [4,    0.07, 6 ],  // two octaves
-      [5,    0.04, 7 ],  // major third above that
-      [6,    0.025,5 ],  // natural 6th harmonic
-      [7,    0.015,5 ],  // natural 7th (slightly flat — just tuning flavour)
-      [0.5,  0.06, 4 ],  // sub-octave for body
+      [1,    0.40, 8 ],  // fundamental with wide spread
+      [2,    0.20, 7 ],  // octave
+      [3,    0.13, 9 ],  // fifth above octave (bright)
+      [4,    0.08, 6 ],  // two octaves
+      [5,    0.05, 7 ],  // major third (bright)
+      [6,    0.03, 5 ],  // 6th harmonic
+      [0.5,  0.08, 4 ],  // sub-octave for body
     ];
 
     harmonics.forEach(([mult, totalGain, spread]) => {
@@ -110,49 +119,33 @@ const DroneModule = (() => {
       });
     });
 
-    // Fifth — very subtle, 2 detuned oscillators to keep it soft
-    const fifthFreq = freq * FIFTH_RATIO;
-    [-5, 5].forEach(detune => {
-      const osc = audioCtx.createOscillator();
-      const g   = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = fifthFreq;
-      osc.detune.value = detune;
-      g.gain.value = 0.055; // barely audible — felt more than heard
-      lfoGain.connect(osc.detune);
-      osc.connect(g);
-      g.connect(masterGain);
-      osc.start();
-      droneNodes.push(osc, g);
-    });
-
-    // Slow bow-like attack (400ms) for the orchestral feel
+    // Slow bow-like attack (350ms) for symphonic ensemble feel
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
+    masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 0.35);
   }
 
-  // ── Bagpipe mode: bold with prominent fifth and reedy texture ─────────────
-  function buildBagpipeDrone(freq) {
+  // ── Meditative mode: enhanced bagpipe with deeper resonance + clearer fifth ──
+  function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Brighter low-pass for reedy character — not as warm as organ
+    // Bright low-pass for clarity
     const lpf = audioCtx.createBiquadFilter();
     lpf.type = 'lowpass';
-    lpf.frequency.value = 3500;  // Brighter than organ's 2200 Hz
+    lpf.frequency.value = 3500;
     lpf.Q.value = 0.6;
 
     masterGain.connect(lpf);
     lpf.connect(audioCtx.destination);
     droneNodes.push(lpf);
 
-    // Very slow tremolo (amplitude modulation at 3 Hz) — meditative breath feel
-    const tremolo     = audioCtx.createOscillator();
+    // Slow meditative tremolo (1.5 Hz) with subtle depth for deep breathing
+    const tremolo = audioCtx.createOscillator();
     const tremoloGain = audioCtx.createGain();
     const tremoloDepth = audioCtx.createGain();
     tremolo.type = 'sine';
-    tremolo.frequency.value = 3;
-    tremoloGain.gain.value = 1;         // carrier
-    tremoloDepth.gain.value = 0.06;     // ±6% amplitude swell (deeper breath)
+    tremolo.frequency.value = 1.5; // Much slower for meditative feel
+    tremoloGain.gain.value = 1;
+    tremoloDepth.gain.value = 0.04; // Subtle amplitude variation
     tremolo.connect(tremoloDepth);
     tremoloDepth.connect(tremoloGain.gain);
     tremolo.start();
@@ -171,31 +164,34 @@ const DroneModule = (() => {
       droneNodes.push(osc, g);
     }
 
-    // Root note — foundation (adjusted for prominent fifth)
-    addPipe(freq * 0.5, 0.15);  // Sub-octave — the "deep" quality
-    addPipe(freq * 1.0, 0.42);  // Fundamental (reduced to let fifth stand out)
-    addPipe(freq * 2.0, 0.12);  // Octave
+    // Deep sub-octave resonance for meditative grounding
+    addPipe(freq * 0.25, 0.08); // Two octaves below for resonance
 
-    // Perfect fifth (e.g. G above C) — PROMINENT, the defining feature of bagpipe
+    // Root note foundation
+    addPipe(freq * 0.5, 0.18);  // Sub-octave (deeper)
+    addPipe(freq * 1.0, 0.42);  // Fundamental
+    addPipe(freq * 2.0, 0.13);  // Octave
+
+    // PROMINENT FIFTH — much clearer and louder
     const fifth = freq * FIFTH_RATIO;
-    addPipe(fifth * 0.5, 0.14); // fifth in sub octave for depth
-    addPipe(fifth * 1.0, 0.48); // fifth at unison — CLEARLY HEARD (was 0.38 in organ)
-    addPipe(fifth * 2.0, 0.16); // fifth octave above — BOLDER (was 0.10 in organ)
+    addPipe(fifth * 0.5, 0.16);  // Fifth sub-octave
+    addPipe(fifth * 1.0, 0.60);  // Fifth unison — VERY LOUD (was 0.48)
+    addPipe(fifth * 2.0, 0.18);  // Fifth octave — BOLDER
 
-    // Upper harmonics for reedy/buzzy character
-    addPipe(freq * 3.0, 0.08); // Third harmonic (adds body)
-    addPipe(freq * 5.0, 0.06); // Fifth harmonic partial (brightness)
+    // Upper harmonics for reedy character
+    addPipe(freq * 3.0, 0.09);   // Third harmonic
+    addPipe(freq * 5.0, 0.06);   // Fifth harmonic
 
-    // Bagpipe speaks immediately with presence
+    // Strong but grounded presence
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.45, audioCtx.currentTime + 0.06);  // Bolder amplitude
+    masterGain.gain.linearRampToValueAtTime(0.45, audioCtx.currentTime + 0.06);
   }
 
   // ── Core controls ─────────────────────────────────────────────────────────
   function buildDrone(freq) {
-    if (droneMode === 'orchestra') buildOrchestralDrone(freq);
-    else if (droneMode === 'bagpipe') buildBagpipeDrone(freq);
-    else buildPureDrone(freq);
+    if (droneMode === 'symphonic') buildSymphonicDrone(freq);
+    else if (droneMode === 'meditative') buildMeditativeDrone(freq);
+    else buildStringDrone(freq);
   }
 
   function start() {
@@ -234,7 +230,6 @@ const DroneModule = (() => {
   function setNote(note) {
     currentNote = note;
     refreshNoteSelectors();
-    refreshYouTubeEmbed();
     if (isPlaying) { stop(); start(); }
   }
 
@@ -269,7 +264,7 @@ const DroneModule = (() => {
     const freq = getFrequency(currentNote, currentAStandard).toFixed(1);
     document.querySelectorAll('.mini-note-display').forEach(el => el.textContent = currentNote);
     document.querySelectorAll('.mini-info').forEach(el => {
-      el.textContent = `${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', organ: 'Organ' }[droneMode]}`;
+      el.textContent = `${freq} Hz · A=${currentAStandard} · ${{ string: 'String', symphonic: 'Symphonic', meditative: 'Meditative' }[droneMode]}`;
     });
   }
 
@@ -314,12 +309,12 @@ const DroneModule = (() => {
         <div>
           <div class="metro-row-label">Tone</div>
           <div class="pill-row">
-            <button class="pill drone-mode-pill${droneMode === 'pure' ? ' active' : ''}"
-                    data-mode="pure" onclick="DroneModule.setMode('pure')">Pure sine</button>
-            <button class="pill drone-mode-pill${droneMode === 'orchestra' ? ' active' : ''}"
-                    data-mode="orchestra" onclick="DroneModule.setMode('orchestra')">Orchestra ✦</button>
-            <button class="pill drone-mode-pill${droneMode === 'bagpipe' ? ' active' : ''}"
-                    data-mode="bagpipe" onclick="DroneModule.setMode('bagpipe')">Bagpipe ♜</button>
+            <button class="pill drone-mode-pill${droneMode === 'string' ? ' active' : ''}"
+                    data-mode="string" onclick="DroneModule.setMode('string')">String</button>
+            <button class="pill drone-mode-pill${droneMode === 'symphonic' ? ' active' : ''}"
+                    data-mode="symphonic" onclick="DroneModule.setMode('symphonic')">Symphonic ✦</button>
+            <button class="pill drone-mode-pill${droneMode === 'meditative' ? ' active' : ''}"
+                    data-mode="meditative" onclick="DroneModule.setMode('meditative')">Meditative ♜</button>
           </div>
         </div>
         <button class="drone-play-btn${isPlaying ? ' playing' : ''}" onclick="DroneModule.toggle()">
@@ -333,7 +328,7 @@ const DroneModule = (() => {
     return `
       <div class="mini-drone-row">
         <div class="mini-note-display">${currentNote}</div>
-        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', bagpipe: 'Bagpipe' }[droneMode]}</div>
+        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${{ string: 'String', symphonic: 'Symphonic', meditative: 'Meditative' }[droneMode]}</div>
         <button class="btn-secondary btn-sm mini-play-btn drone-play-btn${isPlaying ? ' playing' : ''}"
                 onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop' : '▶ Play'}
@@ -343,9 +338,9 @@ const DroneModule = (() => {
 
   function buildDroneModeHTML() {
     const modes = [
-      { id: 'pure', label: 'Pure sine' },
-      { id: 'orchestra', label: 'Orchestra ✦' },
-      { id: 'bagpipe', label: 'Bagpipe ♜' }
+      { id: 'string', label: 'String' },
+      { id: 'symphonic', label: 'Symphonic ✦' },
+      { id: 'meditative', label: 'Meditative ♜' }
     ];
     return modes.map(m =>
       `<button class="pill${m.id === droneMode ? ' active' : ''}"

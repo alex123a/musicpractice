@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Coach — Animation Examples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F8F7F5;
+            color: #2D3436;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #C96952;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .animations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+
+        .animation-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 300ms ease;
+        }
+
+        .animation-card:hover {
+            box-shadow: 0 8px 24px rgba(201, 105, 82, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .animation-title {
+            background: linear-gradient(135deg, #C96952 0%, #E8927C 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .animation-title h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .animation-title p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .animation-demo {
+            height: 200px;
+            padding: 20px;
+            background: #FCF8F5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .animation-description {
+            padding: 20px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .animation-description strong {
+            color: #C96952;
+        }
+
+        .code-block {
+            background: #2D3436;
+            color: #F5F3F0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+
+        /* ANIMATION 1: Button Press */
+        .btn-demo {
+            background: #C96952;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .btn-demo:active {
+            animation: buttonPress 300ms ease-out;
+        }
+
+        @keyframes buttonPress {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ANIMATION 2: Slide & Fade Enter */
+        .slide-enter-demo {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide-enter-card {
+            background: white;
+            border: 2px solid #E8927C;
+            border-radius: 12px;
+            padding: 20px;
+            width: 200px;
+            text-align: center;
+            animation: slideEnter 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-enter-card h4 {
+            font-size: 14px;
+            color: #C96952;
+            margin-bottom: 4px;
+        }
+
+        .slide-enter-card p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* ANIMATION 3: Pulse Success */
+        .pulse-demo {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pulse-circle {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #C96952;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulseSuccess 1s ease-out;
+        }
+
+        .pulse-checkmark {
+            color: white;
+            font-size: 40px;
+            font-weight: 600;
+        }
+
+        @keyframes pulseSuccess {
+            0% {
+                transform: scale(0.3);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #C96952;
+            animation: pulseRing 1s ease-out;
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.4);
+                opacity: 0;
+            }
+        }
+
+        /* ANIMATION 4: Progress Bar Fill */
+        .progress-demo {
+            width: 100%;
+            height: 6px;
+            background: #FBF7F5;
+            border-radius: 3px;
+            overflow: hidden;
+            animation: progressFill 2s ease-out;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #C96952, #E8927C);
+            width: 0%;
+            animation: progressWidth 2s ease-out forwards;
+        }
+
+        @keyframes progressWidth {
+            0% {
+                width: 0%;
+            }
+            100% {
+                width: 66%;
+            }
+        }
+
+        /* ANIMATION 5: Recording Pulse */
+        .record-demo {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-dot {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #C96952;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .record-dot::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            animation: recordPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+        }
+
+        .record-ring {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #C96952;
+            animation: recordRingPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes recordRingPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        /* ANIMATION 6: Focus Highlight */
+        .focus-demo {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .focus-card {
+            background: #FBF7F5;
+            border: 2px solid #E8927C;
+            border-radius: 12px;
+            padding: 24px;
+            width: 220px;
+            text-align: center;
+            position: relative;
+            animation: focusGlow 2s ease-in-out infinite;
+        }
+
+        .focus-card h4 {
+            font-size: 14px;
+            color: #C96952;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .focus-card p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        @keyframes focusGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(201, 105, 82, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(201, 105, 82, 0);
+            }
+        }
+
+        /* ANIMATION 7: Bounce Entrance */
+        .bounce-demo {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bounce-btn {
+            background: #C96952;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            animation: bounceEntrance 700ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceEntrance {
+            0% {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            50% {
+                opacity: 1;
+            }
+            65% {
+                transform: translateY(-8px);
+            }
+            80% {
+                transform: translateY(4px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* ANIMATION 8: Stagger List */
+        .stagger-demo {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .stagger-item {
+            background: white;
+            border: 1px solid #E8927C;
+            border-radius: 6px;
+            padding: 12px 20px;
+            width: 160px;
+            font-size: 12px;
+            color: #666;
+            opacity: 0;
+            animation: staggerSlide 400ms ease-out forwards;
+        }
+
+        .stagger-item:nth-child(1) {
+            animation-delay: 0ms;
+        }
+
+        .stagger-item:nth-child(2) {
+            animation-delay: 100ms;
+        }
+
+        .stagger-item:nth-child(3) {
+            animation-delay: 200ms;
+        }
+
+        @keyframes staggerSlide {
+            0% {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ANIMATION 9: Flip Card */
+        .flip-demo {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .flip-card {
+            width: 180px;
+            height: 120px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #C96952, #E8927C);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            animation: flipCard 800ms ease-out;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes flipCard {
+            0% {
+                transform: rotateY(90deg);
+                opacity: 0;
+            }
+            100% {
+                transform: rotateY(0);
+                opacity: 1;
+            }
+        }
+
+        .demo-trigger {
+            position: absolute;
+            bottom: 12px;
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            width: 100%;
+        }
+
+        .demo-button {
+            background: #4A7C8F;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .demo-button:hover {
+            background: #2C5F6F;
+        }
+
+        .motion-level {
+            background: #FBF7F5;
+            border-left: 4px solid #C96952;
+            padding: 16px;
+            margin-top: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .motion-level strong {
+            color: #C96952;
+        }
+
+        .footer {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .footer h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #C96952;
+            margin-bottom: 16px;
+        }
+
+        .footer p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .animation-guidelines {
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .animation-guidelines li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .animation-guidelines strong {
+            color: #C96952;
+        }
+
+        .prefers-reduced {
+            background: #FBF7F5;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Practice Coach — Animation Examples</h1>
+        <p>Expressive motion that feels encouraging and responsive without being overwhelming. Each animation builds trust and celebrates progress.</p>
+    </div>
+
+    <div class="animations-grid">
+
+        <!-- ANIMATION 1: Button Press -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Button Press</h3>
+                <p>Tactile feedback on interaction</p>
+            </div>
+            <div class="animation-demo">
+                <button class="btn-demo">Continue →</button>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> User presses any button<br/>
+                <strong>Feeling:</strong> Responsive, tactile, satisfying<br/>
+                <strong>Duration:</strong> 300ms<br/>
+                <strong>Use:</strong> All primary and secondary buttons
+                <div class="code-block">animation: buttonPress 300ms ease-out;</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 2: Slide & Fade Enter -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Slide & Fade Enter</h3>
+                <p>Screen transitions with bounce</p>
+            </div>
+            <div class="animation-demo">
+                <div class="slide-enter-demo">
+                    <div class="slide-enter-card">
+                        <h4>Choose focus</h4>
+                        <p>Pitch or intonation?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> New content/question appears<br/>
+                <strong>Feeling:</strong> Friendly entrance, anticipatory<br/>
+                <strong>Duration:</strong> 600ms<br/>
+                <strong>Easing:</strong> Cubic bezier with bounce
+                <div class="code-block">cubic-bezier(0.34, 1.56, 0.64, 1)</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 3: Pulse Success -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Pulse Success</h3>
+                <p>Celebration moment</p>
+            </div>
+            <div class="animation-demo">
+                <div class="pulse-demo">
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-circle">
+                        <div class="pulse-checkmark">✓</div>
+                    </div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Problem solved or goal achieved<br/>
+                <strong>Feeling:</strong> Celebratory, affirming, energetic<br/>
+                <strong>Duration:</strong> 1s<br/>
+                <strong>Use:</strong> Success screens, "Great work!" moments
+                <div class="code-block">Checkmark grows + ring expands out</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 4: Progress Bar -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Progress Fill</h3>
+                <p>Gradual progress visualization</p>
+            </div>
+            <div class="animation-demo">
+                <div class="progress-demo">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Moving through practice session<br/>
+                <strong>Feeling:</strong> Smooth, continuous, forward momentum<br/>
+                <strong>Duration:</strong> 2s (33% → 66%)<br/>
+                <strong>Use:</strong> Progress bars at top of screens
+                <div class="code-block">Easing: ease-out for natural deceleration</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 5: Recording Pulse -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Recording Pulse</h3>
+                <p>Live recording feedback</p>
+            </div>
+            <div class="animation-demo">
+                <div class="record-demo">
+                    <div class="record-ring"></div>
+                    <div class="record-dot"></div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Recording is active<br/>
+                <strong>Feeling:</strong> Alive, present, listening<br/>
+                <strong>Duration:</strong> 1.2s loop<br/>
+                <strong>Use:</strong> Recording button on record screen
+                <div class="code-block">Dot pulses + outer ring expands/fades</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 6: Focus Glow -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Focus Glow</h3>
+                <p>Gentle attention-drawing</p>
+            </div>
+            <div class="animation-demo">
+                <div class="focus-demo">
+                    <div class="focus-card">
+                        <h4>Did you know?</h4>
+                        <p>Slower tempo reveals technique</p>
+                    </div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Tips or hints need attention<br/>
+                <strong>Feeling:</strong> Gentle, encouraging, non-urgent<br/>
+                <strong>Duration:</strong> 2s loop<br/>
+                <strong>Use:</strong> Tip cards, educational moments
+                <div class="code-block">Glow grows and fades smoothly</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 7: Bounce Entrance -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Bounce Entrance</h3>
+                <p>Playful, energetic entry</p>
+            </div>
+            <div class="animation-demo">
+                <div class="bounce-demo">
+                    <button class="bounce-btn">Keep going! →</button>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Encouraging CTAs appear<br/>
+                <strong>Feeling:</strong> Energetic, playful, motivating<br/>
+                <strong>Duration:</strong> 700ms<br/>
+                <strong>Easing:</strong> Cubic bezier with overshoot
+                <div class="code-block">cubic-bezier(0.68, -0.55, 0.265, 1.55)</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 8: Stagger List -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Stagger Entrance</h3>
+                <p>Sequential reveal</p>
+            </div>
+            <div class="animation-demo">
+                <div class="stagger-demo">
+                    <div class="stagger-item">Pitch</div>
+                    <div class="stagger-item">Sound Quality</div>
+                    <div class="stagger-item">Rhythm</div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> List of options appears<br/>
+                <strong>Feeling:</strong> Organized, thoughtful, welcoming<br/>
+                <strong>Duration:</strong> 400ms (each), 100ms stagger<br/>
+                <strong>Use:</strong> Focus selection, option lists
+                <div class="code-block">animation-delay: 0ms, 100ms, 200ms</div>
+            </div>
+        </div>
+
+        <!-- ANIMATION 9: Flip Card -->
+        <div class="animation-card">
+            <div class="animation-title">
+                <h3>Flip Reveal</h3>
+                <p>3D perspective entrance</p>
+            </div>
+            <div class="animation-demo">
+                <div class="flip-demo">
+                    <div class="flip-card">Reference Audio</div>
+                </div>
+            </div>
+            <div class="animation-description">
+                <strong>When:</strong> Important content reveals<br/>
+                <strong>Feeling:</strong> Elegant, sophisticated, surprising<br/>
+                <strong>Duration:</strong> 800ms<br/>
+                <strong>Use:</strong> Reference card reveals, meditation moments
+                <div class="code-block">transform: rotateY(90deg → 0)</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Guidelines -->
+    <div class="footer">
+        <h2>Animation Guidelines for "More Expressive"</h2>
+        
+        <p><strong>Why these animations work for Practice Coach:</strong></p>
+        
+        <ul class="animation-guidelines">
+            <li><strong>Durations: 300ms–800ms</strong> — Fast enough to feel responsive, slow enough to feel thoughtful. Never snappy or instant.</li>
+            
+            <li><strong>Easing curves:</strong> Mix of ease-out, cubic-bezier with bounce. Not linear. Matches how encouragement feels — starts energetic, settles calmly.</li>
+            
+            <li><strong>Celebration moments pulse.</strong> Success animations (pulse ring, bounce) feel expressive and affirming because they reward effort.</li>
+            
+            <li><strong>Subtle loops (1.2s–2s) for live states.</strong> Recording pulse, focus glow keep user engaged without demanding attention.</li>
+            
+            <li><strong>Stagger reveals organize information.</strong> Lists appearing one-by-one (100ms delays) feel thoughtful, not overwhelming.</li>
+            
+            <li><strong>3D transforms (flip, rotate) for special moments.</strong> Used sparingly, they feel elegant and memorable — not overused.</li>
+            
+            <li><strong>Always respond to interaction.</strong> Every button press, scroll, navigation gets tactile feedback. Makes app feel alive.</li>
+            
+            <li><strong>Entrance animations set tone.</strong> New questions/focus options slide in with bounce — says "I'm excited to help you practice."</li>
+        </ul>
+
+        <div class="prefers-reduced">
+            <strong>Accessibility:</strong> All animations respect <code>prefers-reduced-motion</code>. Users who disable animations still get instant, non-animated versions of all interactions.
+        </div>
+
+        <p style="margin-top: 24px; font-size: 13px; color: #888;">
+            <strong>Motion Budget:</strong> The app uses ~9 different animation types across different screens. This variety keeps the experience fresh without feeling chaotic. Each animation has a purpose — never decorative, always purposeful.
+        </p>
+    </div>
+
+</div>
+
+</body>
+</html>
