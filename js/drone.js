@@ -158,112 +158,119 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.40, audioCtx.currentTime + 0.35);
   }
 
-  // ── Meditative mode: two bagpipes — root and fifth as separate voices ───────
+  // ── Meditative mode: ethereal ambient synth with evolving modulation ────────
   function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // === VOICE 1: ROOT NOTE BAGPIPE ===
-    const rootFilter = audioCtx.createBiquadFilter();
-    rootFilter.type = 'lowpass';
-    rootFilter.frequency.value = 3500;
-    rootFilter.Q.value = 0.6;
+    // === EVOLVING MODULATION ===
+    // Very slow LFO for filter sweep (creates evolving character)
+    const filterLFO = audioCtx.createOscillator();
+    const filterLFOGain = audioCtx.createGain();
+    filterLFO.type = 'sine';
+    filterLFO.frequency.value = 0.25; // Ultra slow: 4-second cycle
+    filterLFOGain.gain.value = 900;   // Modulate filter ±900 Hz for subtle movement
+    filterLFO.connect(filterLFOGain);
+    filterLFO.start();
+    droneNodes.push(filterLFO, filterLFOGain);
 
-    const rootTremolo = audioCtx.createOscillator();
-    const rootTremoloGain = audioCtx.createGain();
-    const rootTremoloDepth = audioCtx.createGain();
-    rootTremolo.type = 'sine';
-    rootTremolo.frequency.value = 1.5;
-    rootTremoloGain.gain.value = 1;
-    rootTremoloDepth.gain.value = 0.04;
-    rootTremolo.connect(rootTremoloDepth);
-    rootTremoloDepth.connect(rootTremoloGain.gain);
-    rootTremolo.start();
-    droneNodes.push(rootTremolo, rootTremoloGain, rootTremoloDepth);
+    // Very slow amplitude breathing (separate from filter sweep)
+    const ampLFO = audioCtx.createOscillator();
+    const ampLFOGain = audioCtx.createGain();
+    ampLFO.type = 'sine';
+    ampLFO.frequency.value = 0.35; // Slightly faster breathing: ~3 seconds
+    ampLFOGain.gain.value = 0.12;   // Gentle volume swell (±12%)
+    ampLFO.connect(ampLFOGain);
+    ampLFO.start();
+    droneNodes.push(ampLFO, ampLFOGain);
 
-    rootFilter.connect(masterGain);
+    // === THREE HARMONIC "CLOUDS" WITH INDEPENDENT FILTERS ===
+    // Cloud 1: Warm fundamental layer
+    const filter1 = audioCtx.createBiquadFilter();
+    filter1.type = 'lowpass';
+    filter1.frequency.value = 2500;
+    filter1.Q.value = 0.7;
+    filterLFOGain.connect(filter1.frequency);
 
-    function addRootPipe(frequency, gain) {
-      const osc = audioCtx.createOscillator();
-      const g   = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = frequency;
-      g.gain.value = gain;
-      osc.connect(g);
-      g.connect(rootTremoloGain);
-      rootTremoloGain.connect(rootFilter);
-      osc.start();
-      droneNodes.push(osc, g);
+    // Cloud 2: Bright middle layer
+    const filter2 = audioCtx.createBiquadFilter();
+    filter2.type = 'lowpass';
+    filter2.frequency.value = 3800;
+    filter2.Q.value = 0.6;
+    filterLFOGain.connect(filter2.frequency);
+
+    // Cloud 3: Ethereal upper layer
+    const filter3 = audioCtx.createBiquadFilter();
+    filter3.type = 'lowpass';
+    filter3.frequency.value = 5000;
+    filter3.Q.value = 0.5;
+    filterLFOGain.connect(filter3.frequency);
+
+    // === SPACIOUS REVERB ===
+    const reverbDelay = audioCtx.createDelay(2.0);
+    const reverbGain = audioCtx.createGain();
+    reverbDelay.delayTime.value = 0.35; // Long, spacious reverb tail
+    reverbGain.gain.value = 0.45;       // Wet reverb level
+
+    // === MAIN MIXER ===
+    const wetMix = audioCtx.createGain();
+    wetMix.gain.value = 0.5; // 50% wet reverb
+
+    const dryMix = audioCtx.createGain();
+    dryMix.gain.value = 0.5; // 50% dry direct
+
+    // Route filters to reverb and dry mix
+    filter1.connect(reverbDelay);
+    filter2.connect(reverbDelay);
+    filter3.connect(reverbDelay);
+
+    reverbDelay.connect(reverbGain);
+    reverbGain.connect(audioCtx.destination);
+
+    filter1.connect(audioCtx.destination);
+    filter2.connect(audioCtx.destination);
+    filter3.connect(audioCtx.destination);
+
+    // Main gain with amplitude LFO applied
+    ampLFOGain.connect(masterGain.gain);
+
+    // Route everything through master
+    masterGain.connect(filter1);
+    masterGain.connect(filter2);
+    masterGain.connect(filter3);
+
+    // === CREATE DETUNED CLOUDS FOR SHIMMERING EFFECT ===
+    function addCloud(baseFreq, numOscs = 3, spreadCents = 25) {
+      for (let i = 0; i < numOscs; i++) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'sine';
+        // Spread oscillators around the base frequency for chorus/shimmer
+        const detune = (i - (numOscs - 1) / 2) * (spreadCents / numOscs);
+        osc.detune.value = detune;
+        osc.frequency.value = baseFreq;
+        g.gain.value = 0.6 / numOscs; // Balance total level
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        droneNodes.push(osc, g);
+      }
     }
 
-    // Root voice: fundamental + lower harmonics (warm, deep)
-    addRootPipe(freq * 0.25, 0.10);  // Deep resonance
-    addRootPipe(freq * 0.5, 0.22);   // Sub-octave foundation
-    addRootPipe(freq * 1.0, 0.40);   // Fundamental (strong)
-    addRootPipe(freq * 2.0, 0.14);   // Octave
+    // Cloud 1: Deep fundamental (warm, grounded)
+    addCloud(freq * 0.5, 3, 20);   // Sub-octave cloud
+    addCloud(freq * 1.0, 4, 25);   // Fundamental cloud (widest spread for shimmer)
 
-    // === VOICE 2: FIFTH BAGPIPE (Separate chain) ===
-    const fifthFilter = audioCtx.createBiquadFilter();
-    fifthFilter.type = 'lowpass';
-    fifthFilter.frequency.value = 3400; // Slightly different from root
-    fifthFilter.Q.value = 0.65;
+    // Cloud 2: Octave (bright, clear)
+    addCloud(freq * 2.0, 3, 22);
 
-    const fifthTremolo = audioCtx.createOscillator();
-    const fifthTremoloGain = audioCtx.createGain();
-    const fifthTremoloDepth = audioCtx.createGain();
-    fifthTremolo.type = 'sine';
-    fifthTremolo.frequency.value = 1.4; // Slightly different tempo (not locked)
-    fifthTremoloGain.gain.value = 1;
-    fifthTremoloDepth.gain.value = 0.045;
-    fifthTremolo.connect(fifthTremoloDepth);
-    fifthTremoloDepth.connect(fifthTremoloGain.gain);
-    fifthTremolo.start();
-    droneNodes.push(fifthTremolo, fifthTremoloGain, fifthTremoloDepth);
+    // Cloud 3: Upper partial (ethereal, floating) — slightly detuned for shimmer
+    addCloud(freq * 3.0, 3, 20);
 
-    fifthFilter.connect(masterGain);
-
-    function addFifthPipe(frequency, gain) {
-      const osc = audioCtx.createOscillator();
-      const g   = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = frequency;
-      g.gain.value = gain;
-      osc.connect(g);
-      g.connect(fifthTremoloGain);
-      fifthTremoloGain.connect(fifthFilter);
-      osc.start();
-      droneNodes.push(osc, g);
-    }
-
-    // Fifth voice: perfect fifth + its harmonics (separate melodic line)
-    const fifth = freq * FIFTH_RATIO;
-    addFifthPipe(fifth * 0.5, 0.28);   // Fifth sub-octave — strong independent presence
-    addFifthPipe(fifth * 1.0, 0.95);   // Fifth unison — DOMINANT, heard as main note
-    addFifthPipe(fifth * 2.0, 0.38);   // Fifth octave — bright and clear
-    addFifthPipe(fifth * 3.0, 0.12);   // Fifth + major third harmonic
-
-    // === ECHO EFFECT (on master output) ===
-    const echoDelay = audioCtx.createDelay(1.0);
-    const echoGain = audioCtx.createGain();
-    const echoFeedback = audioCtx.createGain();
-
-    echoDelay.delayTime.value = 0.08;
-    echoGain.gain.value = 0.30;
-    echoFeedback.gain.value = 0.22;
-
-    masterGain.connect(echoDelay);
-    echoDelay.connect(echoGain);
-    echoGain.connect(audioCtx.destination);
-    echoGain.connect(echoFeedback);
-    echoFeedback.connect(echoDelay);
-
-    // Dry signal
-    masterGain.connect(audioCtx.destination);
-
-    droneNodes.push(rootFilter, fifthFilter, echoDelay, echoGain, echoFeedback);
-
-    // Master volume
+    // === VERY SLOW ATTACK FOR FLOATING ENTRY ===
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.45, audioCtx.currentTime + 0.06);
+    masterGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 1.2); // 1.2 second fade-in
+
+    droneNodes.push(filter1, filter2, filter3, reverbDelay, reverbGain);
   }
 
   // ── Core controls ─────────────────────────────────────────────────────────
