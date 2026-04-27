@@ -1,4 +1,4 @@
-const CACHE = 'practice-coach-v27';
+const CACHE = 'practice-coach-v28';
 const APP_SHELL = [
   './',
   './index.html',

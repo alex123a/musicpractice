@@ -158,10 +158,10 @@ const MetronomeModule = (() => {
   function setBPM(val) {
     bpm = Math.min(300, Math.max(20, val));
     refreshBPMDisplay();
-    // Maintain phase 0.5 (center) synchronization when changing BPM during playback
-    if (isRunning && audioCtx) {
-      const beatDur = getBeatDuration();
-      _firstBeatTime = audioCtx.currentTime - (beatDur / 2);
+    // When BPM changes while running, restart to re-schedule all beats at new tempo
+    if (isRunning) {
+      stop();
+      start();
     }
   }
 
