@@ -489,6 +489,11 @@ button {
   bottom: -8px;
   left: 50%;
   transform: translateX(-50%);
+  transition: background 0.05s;
+}
+
+.pendulum-bob.active {
+  background: var(--color-text-secondary);
 }
 
 .beat-dots {
@@ -810,6 +815,11 @@ button {
   bottom: -5px;
   left: 50%;
   transform: translateX(-50%);
+  transition: background 0.05s;
+}
+
+.mini-pendulum-bob.active {
+  background: var(--color-text-secondary);
 }
 
 /* ── Recording zone ── */

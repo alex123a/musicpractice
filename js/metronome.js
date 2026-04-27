@@ -81,7 +81,7 @@ const MetronomeModule = (() => {
       const delay = Math.max(0, (nextNoteTime - audioCtx.currentTime) * 1000);
       setTimeout(() => {
         highlightBeat(capturedBeat);
-        _flashWallForBeat(capturedBeatTime);
+        _flashPendulumBob(capturedBeatTime);
       }, delay);
 
       currentBeat = (currentBeat + 1) % getBeatsPerMeasure();
@@ -100,21 +100,15 @@ const MetronomeModule = (() => {
     });
   }
 
-  // ── Wall flash ────────────────────────────────────────────────────────────
-  // Called at the exact moment of each beat click; flashes the wall the bob
-  // is hitting. Side matches the pendulum position: even beats → right, odd beats → left.
-  function _flashWallForBeat(beatTime) {
+  // ── Pendulum bob flash ────────────────────────────────────────────────────
+  // Called at the exact moment of each beat click; lights up the pendulum bob.
+  function _flashPendulumBob(beatTime) {
     if (_firstBeatTime === null) return;
-    const elapsed   = beatTime - _firstBeatTime;
-    const beatDur   = getBeatDuration();
-    const beatIndex = Math.round(elapsed / beatDur);
-    // sin(π×phase − π/2) starts at −MAX_ANGLE (left) at phase=0, so even beats → left wall
-    const side = beatIndex % 2 === 0 ? 'left' : 'right';
-    document.querySelectorAll(`.pendulum-wall-${side}`).forEach(wall => {
-      // Add active class to darken wall (matched with beat dot timing: 0.05s transition)
-      wall.classList.add('active');
+    // Add active class to darken bob (matched with beat dot timing: 0.05s transition)
+    document.querySelectorAll('.pendulum-bob, .mini-pendulum-bob').forEach(bob => {
+      bob.classList.add('active');
       // Remove active class after brief moment so it fades back
-      setTimeout(() => wall.classList.remove('active'), 150);
+      setTimeout(() => bob.classList.remove('active'), 150);
     });
   }
 
