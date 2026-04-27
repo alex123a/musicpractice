@@ -136,8 +136,10 @@ const MetronomeModule = (() => {
     isRunning    = true;
     currentBeat  = 0;
     nextNoteTime = audioCtx.currentTime + 0.05;
+    // Shift _firstBeatTime back by half beat so sound plays when pendulum is at center (phase = 0.5)
+    const firstBeatTime = nextNoteTime - (getBeatDuration() / 2);
     scheduler();
-    _startPendulumLoop(nextNoteTime);
+    _startPendulumLoop(firstBeatTime);
     refreshRunState();
   }
 
