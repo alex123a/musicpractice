@@ -156,7 +156,11 @@ const MetronomeModule = (() => {
   function setBPM(val) {
     bpm = Math.min(300, Math.max(20, val));
     refreshBPMDisplay();
-    if (isRunning && audioCtx) _firstBeatTime = audioCtx.currentTime;
+    // Maintain phase 0.5 (center) synchronization when changing BPM during playback
+    if (isRunning && audioCtx) {
+      const beatDur = getBeatDuration();
+      _firstBeatTime = audioCtx.currentTime - (beatDur / 2);
+    }
   }
 
   function setTimeSig(sig) {
