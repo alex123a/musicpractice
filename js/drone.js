@@ -95,20 +95,20 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
   }
 
-  // ── Symphonic mode: full ensemble with warm base + bright harmonics ────────
+  // ── Symphonic mode: rich orchestral with deep cello + horn resonance ────────
   function buildSymphonicDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Warm base with subtle high-end cut
+    // Deep warm base with enhanced bass resonance
     const lpf = audioCtx.createBiquadFilter();
     lpf.type = 'lowpass';
-    lpf.frequency.value = 4200; // Brighter than string but still warm
-    lpf.Q.value = 0.5;
+    lpf.frequency.value = 4500; // Slightly brighter for clarity
+    lpf.Q.value = 0.6;
 
     const shelf = audioCtx.createBiquadFilter();
     shelf.type = 'highshelf';
     shelf.frequency.value = 2000;
-    shelf.gain.value = -4; // Warm bass emphasis
+    shelf.gain.value = -5; // Enhanced bass warmth
 
     masterGain.connect(lpf);
     lpf.connect(shelf);
@@ -125,15 +125,16 @@ const DroneModule = (() => {
     lfo.start();
     droneNodes.push(lfo, lfoGain);
 
-    // Rich harmonic series with ensemble spread
+    // Rich harmonic series with ENHANCED BASS: more sub-octaves + lower fundamentals
     const harmonics = [
-      [1,    0.40, 8 ],  // fundamental with wide spread
-      [2,    0.20, 7 ],  // octave
-      [3,    0.13, 9 ],  // fifth above octave (bright)
-      [4,    0.08, 6 ],  // two octaves
-      [5,    0.05, 7 ],  // major third (bright)
-      [6,    0.03, 5 ],  // 6th harmonic
-      [0.5,  0.08, 4 ],  // sub-octave for body
+      [0.25, 0.10, 3 ],  // deep cello resonance (2 octaves below)
+      [0.5,  0.16, 4 ],  // cello/horn sub-octave — strong body
+      [1,    0.42, 8 ],  // fundamental with wide ensemble spread
+      [2,    0.22, 7 ],  // octave (slightly louder)
+      [3,    0.14, 9 ],  // fifth above octave (bright)
+      [4,    0.09, 6 ],  // two octaves (slightly louder)
+      [5,    0.06, 7 ],  // major third (brighter)
+      [6,    0.04, 5 ],  // 6th harmonic
     ];
 
     harmonics.forEach(([mult, totalGain, spread]) => {
@@ -154,7 +155,7 @@ const DroneModule = (() => {
 
     // Slow bow-like attack (350ms) for symphonic ensemble feel
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 0.35);
+    masterGain.gain.linearRampToValueAtTime(0.40, audioCtx.currentTime + 0.35);
   }
 
   // ── Meditative mode: enhanced bagpipe with clearer fifth + echo effect ──────
@@ -219,20 +220,20 @@ const DroneModule = (() => {
     // Deep sub-octave resonance for meditative grounding
     addPipe(freq * 0.25, 0.08); // Two octaves below for resonance
 
-    // Root note foundation
+    // Root note foundation (slightly reduced to let fifth stand out)
     addPipe(freq * 0.5, 0.18);  // Sub-octave (deeper)
-    addPipe(freq * 1.0, 0.42);  // Fundamental
-    addPipe(freq * 2.0, 0.13);  // Octave
+    addPipe(freq * 1.0, 0.35);  // Fundamental (reduced from 0.42)
+    addPipe(freq * 2.0, 0.12);  // Octave
 
-    // VERY PROMINENT FIFTH — clearly audible with echo enhancement
+    // FIFTH AS A SEPARATE MELODIC VOICE — heard as two notes, not an overtone
     const fifth = freq * FIFTH_RATIO;
-    addPipe(fifth * 0.5, 0.16);  // Fifth sub-octave
-    addPipe(fifth * 1.0, 0.72);  // Fifth unison — VERY LOUD (was 0.60)
-    addPipe(fifth * 2.0, 0.20);  // Fifth octave — EVEN BOLDER
+    addPipe(fifth * 0.5, 0.25);  // Fifth sub-octave — STRONG foundation for fifth
+    addPipe(fifth * 1.0, 0.90);  // Fifth unison — DOMINANT (equal to fundamental presence)
+    addPipe(fifth * 2.0, 0.35);  // Fifth octave — PROMINENT and CLEAR
 
     // Upper harmonics for reedy character
-    addPipe(freq * 3.0, 0.09);   // Third harmonic
-    addPipe(freq * 5.0, 0.06);   // Fifth harmonic
+    addPipe(freq * 3.0, 0.08);   // Third harmonic
+    addPipe(freq * 5.0, 0.05);   // Fifth harmonic
 
     // Strong but grounded presence
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
