@@ -131,15 +131,15 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
   }
 
-  // ── Organ mode: deep meditative, clearly audible fifth ───────────────────
-  function buildOrganDrone(freq) {
+  // ── Bagpipe mode: bold with prominent fifth and reedy texture ─────────────
+  function buildBagpipeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Mellow low-pass — organs are warm, not bright
+    // Brighter low-pass for reedy character — not as warm as organ
     const lpf = audioCtx.createBiquadFilter();
     lpf.type = 'lowpass';
-    lpf.frequency.value = 2200;
-    lpf.Q.value = 0.4;
+    lpf.frequency.value = 3500;  // Brighter than organ's 2200 Hz
+    lpf.Q.value = 0.6;
 
     masterGain.connect(lpf);
     lpf.connect(audioCtx.destination);
@@ -152,7 +152,7 @@ const DroneModule = (() => {
     tremolo.type = 'sine';
     tremolo.frequency.value = 3;
     tremoloGain.gain.value = 1;         // carrier
-    tremoloDepth.gain.value = 0.04;     // ±4% amplitude swell
+    tremoloDepth.gain.value = 0.06;     // ±6% amplitude swell (deeper breath)
     tremolo.connect(tremoloDepth);
     tremoloDepth.connect(tremoloGain.gain);
     tremolo.start();
@@ -171,27 +171,30 @@ const DroneModule = (() => {
       droneNodes.push(osc, g);
     }
 
-    // Root note — drawbar-style layers (sub, fundamental, octave, 2nd octave)
-    addPipe(freq * 0.5, 0.22);  // 16' sub-octave — the "deep" quality
-    addPipe(freq * 1.0, 0.48);  // 8'  fundamental
-    addPipe(freq * 2.0, 0.16);  // 4'  octave
-    addPipe(freq * 4.0, 0.05);  // 2'  two octaves — slight air
+    // Root note — foundation (adjusted for prominent fifth)
+    addPipe(freq * 0.5, 0.15);  // Sub-octave — the "deep" quality
+    addPipe(freq * 1.0, 0.42);  // Fundamental (reduced to let fifth stand out)
+    addPipe(freq * 2.0, 0.12);  // Octave
 
-    // Perfect fifth (e.g. G above C) — clearly audible, like a 5⅓' organ stop
+    // Perfect fifth (e.g. G above C) — PROMINENT, the defining feature of bagpipe
     const fifth = freq * FIFTH_RATIO;
-    addPipe(fifth * 0.5, 0.10); // fifth in sub octave for depth
-    addPipe(fifth * 1.0, 0.38); // fifth at unison — clearly heard
-    addPipe(fifth * 2.0, 0.10); // fifth octave above
+    addPipe(fifth * 0.5, 0.14); // fifth in sub octave for depth
+    addPipe(fifth * 1.0, 0.48); // fifth at unison — CLEARLY HEARD (was 0.38 in organ)
+    addPipe(fifth * 2.0, 0.16); // fifth octave above — BOLDER (was 0.10 in organ)
 
-    // Organ speaks immediately, very short 60ms attack
+    // Upper harmonics for reedy/buzzy character
+    addPipe(freq * 3.0, 0.08); // Third harmonic (adds body)
+    addPipe(freq * 5.0, 0.06); // Fifth harmonic partial (brightness)
+
+    // Bagpipe speaks immediately with presence
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 0.06);
+    masterGain.gain.linearRampToValueAtTime(0.45, audioCtx.currentTime + 0.06);  // Bolder amplitude
   }
 
   // ── Core controls ─────────────────────────────────────────────────────────
   function buildDrone(freq) {
     if (droneMode === 'orchestra') buildOrchestralDrone(freq);
-    else if (droneMode === 'organ') buildOrganDrone(freq);
+    else if (droneMode === 'bagpipe') buildBagpipeDrone(freq);
     else buildPureDrone(freq);
   }
 
@@ -290,22 +293,6 @@ const DroneModule = (() => {
     });
   }
 
-  function refreshYouTubeEmbed() {
-    document.querySelectorAll('.drone-yt-embed').forEach(wrap => {
-      if (wrap.closest('details').open) {
-        const videoId = getDroneVideoId(currentNote);
-        wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" allowfullscreen></iframe>`;
-      } else {
-        wrap.innerHTML = '';
-      }
-    });
-  }
-
-  function getDroneVideoId(note) {
-    const saved = (() => { try { return JSON.parse(localStorage.getItem('drone_urls') || '{}'); } catch(e) { return {}; } })();
-    return saved[note] || CONFIG.droneVideoIds[note] || '';
-  }
-
   // ── HTML builders ─────────────────────────────────────────────────────────
   function buildFullHTML() {
     const notePills = NOTES.map(n =>
@@ -331,17 +318,13 @@ const DroneModule = (() => {
                     data-mode="pure" onclick="DroneModule.setMode('pure')">Pure sine</button>
             <button class="pill drone-mode-pill${droneMode === 'orchestra' ? ' active' : ''}"
                     data-mode="orchestra" onclick="DroneModule.setMode('orchestra')">Orchestra ✦</button>
-            <button class="pill drone-mode-pill${droneMode === 'organ' ? ' active' : ''}"
-                    data-mode="organ" onclick="DroneModule.setMode('organ')">Organ ♜</button>
+            <button class="pill drone-mode-pill${droneMode === 'bagpipe' ? ' active' : ''}"
+                    data-mode="bagpipe" onclick="DroneModule.setMode('bagpipe')">Bagpipe ♜</button>
           </div>
         </div>
         <button class="drone-play-btn${isPlaying ? ' playing' : ''}" onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop drone' : '▶ Play drone'}
         </button>
-        <details class="drone-yt-section" ontoggle="DroneModule.onYtToggle(this)">
-          <summary>Reference drone video (YouTube)</summary>
-          <div class="drone-yt-embed"></div>
-        </details>
       </div>`;
   }
 
@@ -350,7 +333,7 @@ const DroneModule = (() => {
     return `
       <div class="mini-drone-row">
         <div class="mini-note-display">${currentNote}</div>
-        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', organ: 'Organ' }[droneMode]}</div>
+        <div class="mini-info">${freq} Hz · A=${currentAStandard} · ${{ pure: 'Pure', orchestra: 'Orchestra', bagpipe: 'Bagpipe' }[droneMode]}</div>
         <button class="btn-secondary btn-sm mini-play-btn drone-play-btn${isPlaying ? ' playing' : ''}"
                 onclick="DroneModule.toggle()">
           ${isPlaying ? '■ Stop' : '▶ Play'}
@@ -362,7 +345,7 @@ const DroneModule = (() => {
     const modes = [
       { id: 'pure', label: 'Pure sine' },
       { id: 'orchestra', label: 'Orchestra ✦' },
-      { id: 'organ', label: 'Organ ♜' }
+      { id: 'bagpipe', label: 'Bagpipe ♜' }
     ];
     return modes.map(m =>
       `<button class="pill${m.id === droneMode ? ' active' : ''}"
@@ -374,15 +357,5 @@ const DroneModule = (() => {
   function render(container)     { container.innerHTML = buildFullHTML(); }
   function renderMini(container) { container.innerHTML = buildMiniHTML(); }
 
-  function onYtToggle(details) {
-    const embed = details.querySelector('.drone-yt-embed');
-    if (details.open) {
-      const videoId = getDroneVideoId(currentNote);
-      embed.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" allowfullscreen></iframe>`;
-    } else {
-      embed.innerHTML = '';
-    }
-  }
-
-  return { render, renderMini, renderNotePicker, buildDroneModeHTML, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
+  return { render, renderMini, renderNotePicker, buildDroneModeHTML, toggle, start, stop, setNote, setAStandard, setMode, isPlaying: () => isPlaying };
 })();
