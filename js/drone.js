@@ -15,51 +15,84 @@ const DroneModule = (() => {
     return aStandard * Math.pow(2, NOTE_OFFSETS[note] / 12);
   }
 
-  // ── String mode: solo string instrument with natural vibrato ───────────────
+  // ── String mode: ensemble detuning + vibrato + subtle fifth (old Orchestra) ──
   function buildStringDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // Warm, woody low-pass filter
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 2200;
-    filter.Q.value = 0.8;
-    masterGain.connect(filter);
-    filter.connect(audioCtx.destination);
-    droneNodes.push(filter);
+    // Warm low-pass + subtle high shelf cut
+    const lpf = audioCtx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 3800;
+    lpf.Q.value = 0.5;
 
-    // Natural vibrato (like a violinist's bow vibrato at 5.5 Hz)
-    const vibrato = audioCtx.createOscillator();
-    const vibratoGain = audioCtx.createGain();
-    vibrato.type = 'sine';
-    vibrato.frequency.value = 5.5;
-    vibratoGain.gain.value = 8; // ±8 cents
-    vibrato.connect(vibratoGain);
-    vibrato.start();
-    droneNodes.push(vibrato, vibratoGain);
+    const shelf = audioCtx.createBiquadFilter();
+    shelf.type = 'highshelf';
+    shelf.frequency.value = 2000;
+    shelf.gain.value = -6; // roll off high end for warmth
 
-    // Build harmonics with vibrato
-    [
-      [1, 0.55, 0],      // fundamental - strong
-      [2, 0.20, 0.5],    // octave - slightly detuned for richness
-      [3, 0.12, -0.5],   // fifth - opposite detune
-    ].forEach(([mult, gain, detune]) => {
+    masterGain.connect(lpf);
+    lpf.connect(shelf);
+    shelf.connect(audioCtx.destination);
+    droneNodes.push(lpf, shelf);
+
+    // Vibrato LFO — 5.5 Hz, ±6 cents, simulates natural bow variation
+    const lfo     = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.value = 5.5;
+    lfoGain.gain.value = 6;
+    lfo.connect(lfoGain);
+    lfo.start();
+    droneNodes.push(lfo, lfoGain);
+
+    // Each entry: [freq multiplier, total gain, ensemble spread cents]
+    // 3 oscillators per harmonic, spread across ±spread cents
+    const harmonics = [
+      [1,    0.38, 8 ],  // fundamental — wide ensemble spread
+      [2,    0.18, 7 ],  // octave
+      [3,    0.11, 9 ],  // fifth above octave
+      [4,    0.07, 6 ],  // two octaves
+      [5,    0.04, 7 ],  // major third above that
+      [6,    0.025,5 ],  // natural 6th harmonic
+      [7,    0.015,5 ],  // natural 7th (slightly flat — just tuning flavour)
+      [0.5,  0.06, 4 ],  // sub-octave for body
+    ];
+
+    harmonics.forEach(([mult, totalGain, spread]) => {
+      [-spread, 0, spread].forEach(detune => {
+        const osc = audioCtx.createOscillator();
+        const g   = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq * mult;
+        osc.detune.value = detune;
+        g.gain.value = totalGain / 3;
+        lfoGain.connect(osc.detune); // vibrato on each oscillator
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        droneNodes.push(osc, g);
+      });
+    });
+
+    // Fifth — very subtle, 2 detuned oscillators to keep it soft
+    const fifthFreq = freq * FIFTH_RATIO;
+    [-5, 5].forEach(detune => {
       const osc = audioCtx.createOscillator();
       const g   = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.value = freq * mult;
+      osc.frequency.value = fifthFreq;
       osc.detune.value = detune;
-      g.gain.value = gain;
-      vibratoGain.connect(osc.detune);
+      g.gain.value = 0.055; // barely audible — felt more than heard
+      lfoGain.connect(osc.detune);
       osc.connect(g);
       g.connect(masterGain);
       osc.start();
       droneNodes.push(osc, g);
     });
 
-    // Slow attack (150ms) like bowing
+    // Slow bow-like attack (400ms) for the orchestral feel
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.15);
+    masterGain.gain.linearRampToValueAtTime(0.32, audioCtx.currentTime + 0.4);
   }
 
   // ── Symphonic mode: full ensemble with warm base + bright harmonics ────────
@@ -124,7 +157,7 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 0.35);
   }
 
-  // ── Meditative mode: enhanced bagpipe with deeper resonance + clearer fifth ──
+  // ── Meditative mode: enhanced bagpipe with clearer fifth + echo effect ──────
   function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
@@ -134,9 +167,28 @@ const DroneModule = (() => {
     lpf.frequency.value = 3500;
     lpf.Q.value = 0.6;
 
+    // Echo/reverb using delay node with feedback
+    const echoDelay = audioCtx.createDelay(1.0);
+    const echoGain = audioCtx.createGain();
+    const echoFeedback = audioCtx.createGain();
+
+    echoDelay.delayTime.value = 0.08; // 80ms echo
+    echoGain.gain.value = 0.35;       // wet signal level
+    echoFeedback.gain.value = 0.25;   // feedback amount (decays naturally)
+
     masterGain.connect(lpf);
+    lpf.connect(echoDelay);
+    echoDelay.connect(echoGain);
+    echoGain.connect(audioCtx.destination);
+
+    // Echo feedback loop
+    echoGain.connect(echoFeedback);
+    echoFeedback.connect(echoDelay);
+
+    // Dry signal also goes to destination
     lpf.connect(audioCtx.destination);
-    droneNodes.push(lpf);
+
+    droneNodes.push(lpf, echoDelay, echoGain, echoFeedback);
 
     // Slow meditative tremolo (1.5 Hz) with subtle depth for deep breathing
     const tremolo = audioCtx.createOscillator();
@@ -172,11 +224,11 @@ const DroneModule = (() => {
     addPipe(freq * 1.0, 0.42);  // Fundamental
     addPipe(freq * 2.0, 0.13);  // Octave
 
-    // PROMINENT FIFTH — much clearer and louder
+    // VERY PROMINENT FIFTH — clearly audible with echo enhancement
     const fifth = freq * FIFTH_RATIO;
     addPipe(fifth * 0.5, 0.16);  // Fifth sub-octave
-    addPipe(fifth * 1.0, 0.60);  // Fifth unison — VERY LOUD (was 0.48)
-    addPipe(fifth * 2.0, 0.18);  // Fifth octave — BOLDER
+    addPipe(fifth * 1.0, 0.72);  // Fifth unison — VERY LOUD (was 0.60)
+    addPipe(fifth * 2.0, 0.20);  // Fifth octave — EVEN BOLDER
 
     // Upper harmonics for reedy character
     addPipe(freq * 3.0, 0.09);   // Third harmonic
