@@ -81,7 +81,6 @@ const MetronomeModule = (() => {
       const delay = Math.max(0, (nextNoteTime - audioCtx.currentTime) * 1000);
       setTimeout(() => {
         highlightBeat(capturedBeat);
-        _flashPendulumBob(capturedBeatTime);
       }, delay);
 
       currentBeat = (currentBeat + 1) % getBeatsPerMeasure();
@@ -100,17 +99,6 @@ const MetronomeModule = (() => {
     });
   }
 
-  // ── Pendulum bob flash ────────────────────────────────────────────────────
-  // Called at the exact moment of each beat click; lights up the pendulum bob.
-  function _flashPendulumBob(beatTime) {
-    if (_firstBeatTime === null) return;
-    // Add active class to darken bob (matched with beat dot timing: 0.05s transition)
-    document.querySelectorAll('.pendulum-bob, .mini-pendulum-bob').forEach(bob => {
-      bob.classList.add('active');
-      // Remove active class after brief moment so it fades back
-      setTimeout(() => bob.classList.remove('active'), 150);
-    });
-  }
 
   // ── JS-driven pendulum ────────────────────────────────────────────────────
   function _startPendulumLoop(firstBeatTime) {
