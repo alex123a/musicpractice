@@ -162,12 +162,12 @@ const DroneModule = (() => {
   function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // === GENTLE BREATHING (very slow amplitude modulation) ===
+    // === SUBTLE BREATHING (very slow, barely perceptible amplitude modulation) ===
     const breatheLFO = audioCtx.createOscillator();
     const breatheDepth = audioCtx.createGain();
     breatheLFO.type = 'sine';
-    breatheLFO.frequency.value = 0.4; // ~2.5 second breathing cycle
-    breatheDepth.gain.value = 0.15;   // ±15% gentle swell
+    breatheLFO.frequency.value = 0.3; // Slower: ~3.3 second breathing cycle
+    breatheDepth.gain.value = 0.05;   // ±5% very subtle swell (barely noticeable)
     breatheLFO.connect(breatheDepth);
     breatheLFO.start();
     droneNodes.push(breatheLFO, breatheDepth);
