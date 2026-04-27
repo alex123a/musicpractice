@@ -26,6 +26,7 @@ const MetronomeModule = (() => {
 
   const LOOKAHEAD_MS   = 25;
   const SCHEDULE_AHEAD = 0.1;
+  const AUDIO_LATENCY_COMPENSATION = -0.02; // -20ms offset to compensate for system audio latency
 
   function getBeatDuration() {
     return (60 / bpm) * (4 / SIG_DENOMINATORS[timeSig]);
@@ -74,7 +75,8 @@ const MetronomeModule = (() => {
   function scheduler() {
     while (nextNoteTime < audioCtx.currentTime + SCHEDULE_AHEAD) {
       const isAccent         = currentBeat === 0;
-      scheduleBeat(nextNoteTime, isAccent);
+      // Apply latency compensation: advance sound to align with visual pendulum
+      scheduleBeat(nextNoteTime + AUDIO_LATENCY_COMPENSATION, isAccent);
 
       const capturedBeat     = currentBeat;
       const capturedBeatTime = nextNoteTime;
