@@ -158,119 +158,74 @@ const DroneModule = (() => {
     masterGain.gain.linearRampToValueAtTime(0.40, audioCtx.currentTime + 0.35);
   }
 
-  // ── Meditative mode: ethereal ambient synth with evolving modulation ────────
+  // ── Meditative mode: clean ethereal ambient with deep bass + gentle breathing ──
   function buildMeditativeDrone(freq) {
     masterGain = audioCtx.createGain();
 
-    // === EVOLVING MODULATION ===
-    // Very slow LFO for filter sweep (creates evolving character)
-    const filterLFO = audioCtx.createOscillator();
-    const filterLFOGain = audioCtx.createGain();
-    filterLFO.type = 'sine';
-    filterLFO.frequency.value = 0.25; // Ultra slow: 4-second cycle
-    filterLFOGain.gain.value = 900;   // Modulate filter ±900 Hz for subtle movement
-    filterLFO.connect(filterLFOGain);
-    filterLFO.start();
-    droneNodes.push(filterLFO, filterLFOGain);
+    // === GENTLE BREATHING (very slow amplitude modulation) ===
+    const breatheLFO = audioCtx.createOscillator();
+    const breatheDepth = audioCtx.createGain();
+    breatheLFO.type = 'sine';
+    breatheLFO.frequency.value = 0.4; // ~2.5 second breathing cycle
+    breatheDepth.gain.value = 0.15;   // ±15% gentle swell
+    breatheLFO.connect(breatheDepth);
+    breatheLFO.start();
+    droneNodes.push(breatheLFO, breatheDepth);
 
-    // Very slow amplitude breathing (separate from filter sweep)
-    const ampLFO = audioCtx.createOscillator();
-    const ampLFOGain = audioCtx.createGain();
-    ampLFO.type = 'sine';
-    ampLFO.frequency.value = 0.35; // Slightly faster breathing: ~3 seconds
-    ampLFOGain.gain.value = 0.12;   // Gentle volume swell (±12%)
-    ampLFO.connect(ampLFOGain);
-    ampLFO.start();
-    droneNodes.push(ampLFO, ampLFOGain);
-
-    // === THREE HARMONIC "CLOUDS" WITH INDEPENDENT FILTERS ===
-    // Cloud 1: Warm fundamental layer
-    const filter1 = audioCtx.createBiquadFilter();
-    filter1.type = 'lowpass';
-    filter1.frequency.value = 2500;
-    filter1.Q.value = 0.7;
-    filterLFOGain.connect(filter1.frequency);
-
-    // Cloud 2: Bright middle layer
-    const filter2 = audioCtx.createBiquadFilter();
-    filter2.type = 'lowpass';
-    filter2.frequency.value = 3800;
-    filter2.Q.value = 0.6;
-    filterLFOGain.connect(filter2.frequency);
-
-    // Cloud 3: Ethereal upper layer
-    const filter3 = audioCtx.createBiquadFilter();
-    filter3.type = 'lowpass';
-    filter3.frequency.value = 5000;
-    filter3.Q.value = 0.5;
-    filterLFOGain.connect(filter3.frequency);
+    // === WARM, SMOOTH LOW-PASS FILTER ===
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 3500;
+    filter.Q.value = 0.6;
 
     // === SPACIOUS REVERB ===
     const reverbDelay = audioCtx.createDelay(2.0);
     const reverbGain = audioCtx.createGain();
-    reverbDelay.delayTime.value = 0.35; // Long, spacious reverb tail
-    reverbGain.gain.value = 0.45;       // Wet reverb level
+    reverbDelay.delayTime.value = 0.4; // Long spacious tail
+    reverbGain.gain.value = 0.5;       // 50% wet
 
-    // === MAIN MIXER ===
-    const wetMix = audioCtx.createGain();
-    wetMix.gain.value = 0.5; // 50% wet reverb
-
-    const dryMix = audioCtx.createGain();
-    dryMix.gain.value = 0.5; // 50% dry direct
-
-    // Route filters to reverb and dry mix
-    filter1.connect(reverbDelay);
-    filter2.connect(reverbDelay);
-    filter3.connect(reverbDelay);
-
+    filter.connect(reverbDelay);
     reverbDelay.connect(reverbGain);
     reverbGain.connect(audioCtx.destination);
 
-    filter1.connect(audioCtx.destination);
-    filter2.connect(audioCtx.destination);
-    filter3.connect(audioCtx.destination);
+    // Dry signal
+    filter.connect(audioCtx.destination);
 
-    // Main gain with amplitude LFO applied
-    ampLFOGain.connect(masterGain.gain);
+    // === APPLY BREATHING TO MASTER GAIN ===
+    const baseGain = audioCtx.createGain();
+    baseGain.gain.value = 1;
+    breatheDepth.connect(masterGain.gain);
 
-    // Route everything through master
-    masterGain.connect(filter1);
-    masterGain.connect(filter2);
-    masterGain.connect(filter3);
+    masterGain.connect(filter);
+    droneNodes.push(filter, reverbDelay, reverbGain, baseGain);
 
-    // === CREATE DETUNED CLOUDS FOR SHIMMERING EFFECT ===
-    function addCloud(baseFreq, numOscs = 3, spreadCents = 25) {
-      for (let i = 0; i < numOscs; i++) {
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = 'sine';
-        // Spread oscillators around the base frequency for chorus/shimmer
-        const detune = (i - (numOscs - 1) / 2) * (spreadCents / numOscs);
-        osc.detune.value = detune;
-        osc.frequency.value = baseFreq;
-        g.gain.value = 0.6 / numOscs; // Balance total level
-        osc.connect(g);
-        g.connect(masterGain);
-        osc.start();
-        droneNodes.push(osc, g);
-      }
+    // === ADD CLEAN HARMONIC LAYERS (no detuning, no artifacts) ===
+    function addOscillator(frequency, gain) {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start();
+      droneNodes.push(osc, g);
     }
 
-    // Cloud 1: Deep fundamental (warm, grounded)
-    addCloud(freq * 0.5, 3, 20);   // Sub-octave cloud
-    addCloud(freq * 1.0, 4, 25);   // Fundamental cloud (widest spread for shimmer)
+    // === DEEP SUB-BASS FOUNDATION (the "lots of deep frequencies") ===
+    addOscillator(freq * 0.125, 0.18); // Deep sub-bass (2 octaves below)
+    addOscillator(freq * 0.25, 0.22);  // Sub-bass resonance (1.5 octaves below)
+    addOscillator(freq * 0.5, 0.28);   // Sub-octave (warm, deep body)
 
-    // Cloud 2: Octave (bright, clear)
-    addCloud(freq * 2.0, 3, 22);
+    // === MAIN HARMONIC SERIES (clear, pure) ===
+    addOscillator(freq * 1.0, 0.45);   // Fundamental (core)
+    addOscillator(freq * 2.0, 0.20);   // Octave (clarity)
+    addOscillator(freq * 3.0, 0.12);   // Twelfth (brightness)
+    addOscillator(freq * 4.0, 0.08);   // Two octaves (air)
 
-    // Cloud 3: Upper partial (ethereal, floating) — slightly detuned for shimmer
-    addCloud(freq * 3.0, 3, 20);
-
-    // === VERY SLOW ATTACK FOR FLOATING ENTRY ===
+    // === VERY SLOW GENTLE ATTACK ===
     masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 1.2); // 1.2 second fade-in
-
-    droneNodes.push(filter1, filter2, filter3, reverbDelay, reverbGain);
+    masterGain.gain.linearRampToValueAtTime(0.38, audioCtx.currentTime + 1.5); // 1.5 second fade-in
   }
 
   // ── Core controls ─────────────────────────────────────────────────────────
