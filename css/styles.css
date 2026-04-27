@@ -436,6 +436,18 @@ button {
   height: 90px;
 }
 
+.pendulum-container::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border-tertiary);
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
 .pendulum-pivot {
   width: 10px;
   height: 10px;
@@ -785,6 +797,18 @@ button {
   width: 30px;
   height: 45px;
   flex-shrink: 0;
+}
+
+.mini-pendulum-container::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: var(--color-border-tertiary);
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 0;
 }
 
 .mini-pendulum-arm {
