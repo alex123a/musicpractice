@@ -244,6 +244,9 @@ const DroneModule = (() => {
   function setMode(mode) {
     droneMode = mode;
     refreshModeButtons();
+    // Refresh pills on Screen 4 if visible
+    const s4Pills = document.getElementById('drone-mode-pills');
+    if (s4Pills) s4Pills.innerHTML = buildDroneModeHTML();
     if (isPlaying) { stop(); start(); }
   }
 
@@ -355,6 +358,19 @@ const DroneModule = (() => {
       </div>`;
   }
 
+  function buildDroneModeHTML() {
+    const modes = [
+      { id: 'pure', label: 'Pure sine' },
+      { id: 'orchestra', label: 'Orchestra ✦' },
+      { id: 'organ', label: 'Organ ♜' }
+    ];
+    return modes.map(m =>
+      `<button class="pill${m.id === droneMode ? ' active' : ''}"
+               data-mode="${m.id}"
+               onclick="DroneModule.setMode('${m.id}')">${m.label}</button>`
+    ).join('');
+  }
+
   function render(container)     { container.innerHTML = buildFullHTML(); }
   function renderMini(container) { container.innerHTML = buildMiniHTML(); }
 
@@ -368,5 +384,5 @@ const DroneModule = (() => {
     }
   }
 
-  return { render, renderMini, renderNotePicker, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
+  return { render, renderMini, renderNotePicker, buildDroneModeHTML, toggle, start, stop, setNote, setAStandard, setMode, onYtToggle, isPlaying: () => isPlaying };
 })();

@@ -438,7 +438,16 @@ function renderMiniPanel() {
   const bodyEl = document.getElementById('mini-ref-body');
   if (!bodyEl) return;
   if (state.selectedFocus === 'pitch') {
-    DroneModule.renderMini(bodyEl);
+    bodyEl.innerHTML = `
+      <div class="metro-tool">
+        <div id="drone-s4-display"></div>
+        <div style="margin-top: 0.75rem;">
+          <div class="metro-row-label">Drone type</div>
+          <div class="pill-row" id="drone-mode-pills"></div>
+        </div>
+      </div>`;
+    DroneModule.renderMini(document.getElementById('drone-s4-display'));
+    document.getElementById('drone-mode-pills').innerHTML = DroneModule.buildDroneModeHTML();
   } else {
     // Pendulum + start/stop always visible; BPM/timesig/subdivision in collapsible section
     bodyEl.innerHTML = `
